@@ -67,7 +67,7 @@ class Task(object):
     Represents a DAQmx Task.
     """
 
-    def __init__(self, new_task_name=''):
+    def __init__(self, new_task_name='', debug_mode = False):
         """
         Creates a DAQmx task.
 
@@ -81,42 +81,57 @@ class Task(object):
                 attempts to create multiple tasks with the same name, which
                 results in an error.
         """
-        self._handle = lib_importer.task_handle(0)
+        self.debug_mode = debug_mode
+        if not self.debug_mode:
+            self._handle = lib_importer.task_handle(0)
+            cfunc = lib_importer.windll.DAQmxCreateTask
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            ctypes_byte_str,
+                            ctypes.POINTER(lib_importer.task_handle)]
 
-        cfunc = lib_importer.windll.DAQmxCreateTask
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        ctypes_byte_str,
-                        ctypes.POINTER(lib_importer.task_handle)]
-
-        error_code = cfunc(
-            new_task_name, ctypes.byref(self._handle))
-        check_for_error(error_code)
-
-        self._initialize(self._handle)
+            error_code = cfunc(
+                new_task_name, ctypes.byref(self._handle))
+            check_for_error(error_code)
+            self._initialize(self._handle)
+        else:
+            # self._task_handle = ctypes.c_uint
+            if not (len(new_task_name)  > 0):
+                new_task_name = "Task"
+                self.name = new_task_name
+            self._handle = ctypes.c_uint
+            print("Handle", self._handle)
+            self._initialize(self._handle)
+            error_code = 0
 
     def __del__(self):
-        if self._handle is not None:
-            warnings.warn(
-                'Task of name "{0}" was not explicitly closed before it was '
-                'destructed. Resources on the task device may still be '
-                'reserved.'.format(self._saved_name), DaqResourceWarning)
+        if not self.debug_mode:
+            if self._handle is not None:
+                warnings.warn(
+                    'Task of name "{0}" was not explicitly closed before it was '
+                    'destructed. Resources on the task device may still be '
+                    'reserved.'.format(self._saved_name), DaqResourceWarning)
 
     def __enter__(self):
         return self
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self._handle == other._handle
+        if not self.debug_mode:
+            if isinstance(other, self.__class__):
+                return self._handle == other._handle
+            return False
         return False
 
     def __exit__(self, type, value, traceback):
         self.close()
 
     def __hash__(self):
-        return hash(self._handle)
+        if not self.debug_mode:
+            return hash(self._handle)
+        else:
+            return hash()
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -129,33 +144,35 @@ class Task(object):
         """
         str: Indicates the name of the task.
         """
-        cfunc = lib_importer.windll.DAQmxGetTaskName
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle, ctypes.c_char_p,
-                        ctypes.c_uint]
+        if not self.debug_mode:
+            cfunc = lib_importer.windll.DAQmxGetTaskName
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle, ctypes.c_char_p,
+                            ctypes.c_uint]
 
-        temp_size = 0
-        while True:
-            val = ctypes.create_string_buffer(temp_size)
+            temp_size = 0
+            while True:
+                val = ctypes.create_string_buffer(temp_size)
 
-            size_or_code = cfunc(
-                self._handle, val, temp_size)
+                size_or_code = cfunc(
+                    self._handle, val, temp_size)
 
-            if is_string_buffer_too_small(size_or_code):
-                # Buffer size must have changed between calls; check again.
-                temp_size = 0
-            elif size_or_code > 0 and temp_size == 0:
-                # Buffer size obtained, use to retrieve data.
-                temp_size = size_or_code
-            else:
-                break
+                if is_string_buffer_too_small(size_or_code):
+                    # Buffer size must have changed between calls; check again.
+                    temp_size = 0
+                elif size_or_code > 0 and temp_size == 0:
+                    # Buffer size obtained, use to retrieve data.
+                    temp_size = size_or_code
+                else:
+                    break
+            check_for_error(size_or_code)
 
-        check_for_error(size_or_code)
-
-        return val.value.decode('ascii')
+            return val.value.decode('ascii')    # Expects string generated of char bytes array.
+        else:   # TODO: Test this string return, lack of encoding/formatting may cause issues.
+            return "Dummy"
 
     @property
     def channels(self):
@@ -172,53 +189,59 @@ class Task(object):
         """
         List[str]: Indicates the names of all virtual channels in the task.
         """
-        cfunc = lib_importer.windll.DAQmxGetTaskChannels
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle, ctypes.c_char_p,
-                        ctypes.c_uint]
+        if not self.debug_mode:
+            cfunc = lib_importer.windll.DAQmxGetTaskChannels
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle, ctypes.c_char_p,
+                            ctypes.c_uint]
 
-        temp_size = 0
-        while True:
-            val = ctypes.create_string_buffer(temp_size)
+            temp_size = 0
+            while True:
+                val = ctypes.create_string_buffer(temp_size)
 
-            size_or_code = cfunc(
-                self._handle, val, temp_size)
+                size_or_code = cfunc(
+                    self._handle, val, temp_size)
 
-            if is_string_buffer_too_small(size_or_code):
-                # Buffer size must have changed between calls; check again.
-                temp_size = 0
-            elif size_or_code > 0 and temp_size == 0:
-                # Buffer size obtained, use to retrieve data.
-                temp_size = size_or_code
-            else:
-                break
+                if is_string_buffer_too_small(size_or_code):
+                    # Buffer size must have changed between calls; check again.
+                    temp_size = 0
+                elif size_or_code > 0 and temp_size == 0:
+                    # Buffer size obtained, use to retrieve data.
+                    temp_size = size_or_code
+                else:
+                    break
 
-        check_for_error(size_or_code)
+            check_for_error(size_or_code)
 
-        return unflatten_channel_string(val.value.decode('ascii'))
+            return unflatten_channel_string(val.value.decode('ascii'))
+        else:       # TODO: Acquire defined channels for task comm line by editing Channel_Collection.py
+            return ["Channel1","Channel2"]
+
 
     @property
     def number_of_channels(self):
         """
         int: Indicates the number of virtual channels in the task.
         """
-        val = ctypes.c_uint()
+        if not self.debug_mode:
+            val = ctypes.c_uint()
 
-        cfunc = lib_importer.windll.DAQmxGetTaskNumChans
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle, ctypes.POINTER(ctypes.c_uint)]
+            cfunc = lib_importer.windll.DAQmxGetTaskNumChans
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle, ctypes.POINTER(ctypes.c_uint)]
 
-        error_code = cfunc(
-            self._handle, ctypes.byref(val))
-        check_for_error(error_code)
-
-        return val.value
+            error_code = cfunc(
+                self._handle, ctypes.byref(val))
+            check_for_error(error_code)
+            return val.value
+        else:
+            return 2
 
     @property
     def devices(self):
@@ -226,54 +249,58 @@ class Task(object):
         List[:class:`nidaqmx.system.device.Device`]: Indicates a list 
             of Device objects representing all the devices in the task.
         """
-        cfunc = lib_importer.windll.DAQmxGetTaskDevices
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle, ctypes.c_char_p,
-                        ctypes.c_uint]
+        if not self.debug_mode:
+            cfunc = lib_importer.windll.DAQmxGetTaskDevices
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle, ctypes.c_char_p,
+                            ctypes.c_uint]
 
-        temp_size = 0
-        while True:
-            val = ctypes.create_string_buffer(temp_size)
+            temp_size = 0
+            while True:
+                val = ctypes.create_string_buffer(temp_size)
 
-            size_or_code = cfunc(
-                self._handle, val, temp_size)
+                size_or_code = cfunc(
+                    self._handle, val, temp_size)
 
-            if is_string_buffer_too_small(size_or_code):
-                # Buffer size must have changed between calls; check again.
-                temp_size = 0
-            elif size_or_code > 0 and temp_size == 0:
-                # Buffer size obtained, use to retrieve data.
-                temp_size = size_or_code
-            else:
-                break
+                if is_string_buffer_too_small(size_or_code):
+                    # Buffer size must have changed between calls; check again.
+                    temp_size = 0
+                elif size_or_code > 0 and temp_size == 0:
+                    # Buffer size obtained, use to retrieve data.
+                    temp_size = size_or_code
+                else:
+                    break
 
-        check_for_error(size_or_code)
+            check_for_error(size_or_code)
 
-        return [Device(v) for v in
-                unflatten_channel_string(val.value.decode('ascii'))]
+            return [Device(v) for v in
+                    unflatten_channel_string(val.value.decode('ascii'))]
+        else:
+            ["device1"]
 
     @property
     def number_of_devices(self):
         """
         int: Indicates the number of devices in the task.
         """
-        val = ctypes.c_uint()
+        if not self.debug_mode:
+            val = ctypes.c_uint()
+            cfunc = lib_importer.windll.DAQmxGetTaskNumDevices
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle, ctypes.POINTER(ctypes.c_uint)]
 
-        cfunc = lib_importer.windll.DAQmxGetTaskNumDevices
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle, ctypes.POINTER(ctypes.c_uint)]
-
-        error_code = cfunc(
-            self._handle, ctypes.byref(val))
-        check_for_error(error_code)
-
-        return val.value
+            error_code = cfunc(
+                self._handle, ctypes.byref(val))
+            check_for_error(error_code)
+            return val.value
+        else:
+            return 1
 
     @property
     def ai_channels(self):
@@ -380,6 +407,8 @@ class Task(object):
         self._co_channels = COChannelCollection(task_handle)
         self._di_channels = DIChannelCollection(task_handle)
         self._do_channels = DOChannelCollection(task_handle)
+        if (self.debug_mode):
+            self.do_channels.debug_mode = self.debug_mode
         self._export_signals = ExportSignals(task_handle)
         self._in_stream = InStream(self)
         self._timing = Timing(task_handle)
@@ -432,18 +461,21 @@ class Task(object):
                 If you pass an invalid channel, NI-DAQmx returns an error.
                 This value is ignored if it is empty.
         """
-        cfunc = lib_importer.windll.DAQmxAddGlobalChansToTask
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle, ctypes_byte_str]
+        if not self.debug_mode:
+            cfunc = lib_importer.windll.DAQmxAddGlobalChansToTask
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle, ctypes_byte_str]
 
-        channels = flatten_channel_string([g._name for g in global_channels])
+            channels = flatten_channel_string([g._name for g in global_channels])
 
-        error_code = cfunc(
-            self._handle, channels)
-        check_for_error(error_code)
+            error_code = cfunc(
+                self._handle, channels)
+            check_for_error(error_code)
+        else:
+            return "channel1,channel2"
 
     def close(self):
         """
@@ -462,19 +494,22 @@ class Task(object):
                 'Attempted to close NI-DAQmx task of name "{0}" but task was '
                 'already closed.'.format(self._saved_name), DaqResourceWarning)
             return
+        if not self.debug_mode:
+            cfunc = lib_importer.windll.DAQmxClearTask
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle]
 
-        cfunc = lib_importer.windll.DAQmxClearTask
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle]
+            error_code = cfunc(
+                self._handle)
+            check_for_error(error_code)
 
-        error_code = cfunc(
-            self._handle)
-        check_for_error(error_code)
-
-        self._handle = None
+            self._handle = None
+        else:
+            print("Task is closed.")
+            return 0
 
     def control(self, action):
         """
@@ -484,16 +519,20 @@ class Task(object):
             action (nidaqmx.constants.TaskMode): Specifies how to alter
                 the task state.
         """
-        cfunc = lib_importer.windll.DAQmxTaskControl
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle, ctypes.c_int]
+        if not self.debug_mode:
+            cfunc = lib_importer.windll.DAQmxTaskControl
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle, ctypes.c_int]
 
-        error_code = cfunc(
-            self._handle, action.value)
-        check_for_error(error_code)
+            error_code = cfunc(
+                self._handle, action.value)
+            check_for_error(error_code)
+        else:
+            # TODO: Assign task mode prop.
+            return 0
 
     def is_task_done(self):
         """
@@ -506,20 +545,22 @@ class Task(object):
 
             Indicates if the measurement or generation completed.
         """
-        is_task_done = c_bool32()
+        if not self.debug_mode:
+            is_task_done = c_bool32()
+            cfunc = lib_importer.windll.DAQmxIsTaskDone
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle, ctypes.POINTER(c_bool32)]
 
-        cfunc = lib_importer.windll.DAQmxIsTaskDone
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle, ctypes.POINTER(c_bool32)]
-
-        error_code = cfunc(
-            self._handle, ctypes.byref(is_task_done))
-        check_for_error(error_code)
-
-        return is_task_done.value
+            error_code = cfunc(
+                self._handle, ctypes.byref(is_task_done))
+            check_for_error(error_code)
+            return is_task_done.value
+        else:
+            # TODO: Determine a way of probing task status virtually.
+            return 0
 
     def read(self, number_of_samples_per_channel=NUM_SAMPLES_UNSET,
              timeout=10.0):
@@ -979,25 +1020,28 @@ class Task(object):
                 to allow the task, global channel, or custom scale to be
                 deleted through MAX.
         """
-        options = 0
-        if overwrite_existing_task:
-            options |= _Save.OVERWRITE.value
-        if allow_interactive_editing:
-            options |= _Save.ALLOW_INTERACTIVE_EDITING.value
-        if allow_interactive_deletion:
-            options |= _Save.ALLOW_INTERACTIVE_DELETION.value
+        if not self.debug_mode:
+            options = 0
+            if overwrite_existing_task:
+                options |= _Save.OVERWRITE.value
+            if allow_interactive_editing:
+                options |= _Save.ALLOW_INTERACTIVE_EDITING.value
+            if allow_interactive_deletion:
+                options |= _Save.ALLOW_INTERACTIVE_DELETION.value
 
-        cfunc = lib_importer.windll.DAQmxSaveTask
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle, ctypes_byte_str,
-                        ctypes_byte_str, ctypes.c_uint]
+            cfunc = lib_importer.windll.DAQmxSaveTask
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle, ctypes_byte_str,
+                            ctypes_byte_str, ctypes.c_uint]
 
-        error_code = cfunc(
-            self._handle, save_as, author, options)
-        check_for_error(error_code)
+            error_code = cfunc(
+                self._handle, save_as, author, options)
+            check_for_error(error_code)
+        else:
+            return 0
 
     def start(self):
         """
@@ -1016,14 +1060,17 @@ class Task(object):
         repeatedly. Starting and stopping a task repeatedly reduces the
         performance of the application.
         """
-        cfunc = lib_importer.windll.DAQmxStartTask
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [lib_importer.task_handle]
+        if not self.debug_mode:
+            cfunc = lib_importer.windll.DAQmxStartTask
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [lib_importer.task_handle]
 
-        error_code = cfunc(self._handle)
-        check_for_error(error_code)
+            error_code = cfunc(self._handle)
+            check_for_error(error_code)
+        else:
+            return 0
 
     def stop(self):
         """
@@ -1037,14 +1084,17 @@ class Task(object):
         repeatedly. Starting and stopping a task repeatedly reduces the
         performance of the application.
         """
-        cfunc = lib_importer.windll.DAQmxStopTask
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [lib_importer.task_handle]
+        if not self.debug_mode:
+            cfunc = lib_importer.windll.DAQmxStopTask
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [lib_importer.task_handle]
 
-        error_code = cfunc(self._handle)
-        check_for_error(error_code)
+            error_code = cfunc(self._handle)
+            check_for_error(error_code)
+        else:
+            return 0
 
     def wait_until_done(self, timeout=10.0):
         """
@@ -1062,14 +1112,17 @@ class Task(object):
                 set timeout (sec) to 0, the method checks once and returns
                 an error if the measurement or generation is not done.
         """
-        cfunc = lib_importer.windll.DAQmxWaitUntilTaskDone
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [lib_importer.task_handle, ctypes.c_double]
+        if not self.debug_mode:
+            cfunc = lib_importer.windll.DAQmxWaitUntilTaskDone
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [lib_importer.task_handle, ctypes.c_double]
 
-        error_code = cfunc(self._handle, timeout)
-        check_for_error(error_code)
+            error_code = cfunc(self._handle, timeout)
+            check_for_error(error_code)
+        else:
+            return 0
 
     def _raise_invalid_num_lines_error(
             self, num_lines_expected, num_lines_in_data):

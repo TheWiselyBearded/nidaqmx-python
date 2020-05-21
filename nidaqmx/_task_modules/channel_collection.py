@@ -22,8 +22,9 @@ class ChannelCollection(Sequence):
     
     This class defines methods that implements a container object.
     """
-    def __init__(self, task_handle):
+    def __init__(self, task_handle, debug_mode=False):
         self._handle = task_handle
+        self.debug_mode = debug_mode
 
     def __contains__(self, item):
         channel_names = self.channel_names

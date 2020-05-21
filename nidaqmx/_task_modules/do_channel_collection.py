@@ -16,11 +16,23 @@ from nidaqmx.constants import (
 
 
 class DOChannelCollection(ChannelCollection):
+
+    @property
+    def debug_mode(self):
+        return self.__debug_mode
+
+    @debug_mode.setter
+    def debug_mode(self, x):
+        self.__debug_mode=x
+
     """
     Contains the collection of digital output channels for a DAQmx Task.
     """
-    def __init__(self, task_handle):
-        super(DOChannelCollection, self).__init__(task_handle)
+    def __init__(self, task_handle, debug_mode=False):
+        self.debug_mode = debug_mode
+        if not debug_mode:
+            super(DOChannelCollection, self).__init__(task_handle)
+        super(DOChannelCollection, self).__init__(0)
 
     def _create_chan(self, lines, line_grouping, name_to_assign_to_lines=''):
         """
@@ -90,17 +102,24 @@ class DOChannelCollection(ChannelCollection):
             
             Indicates the newly created channel object.
         """
-        cfunc = lib_importer.windll.DAQmxCreateDOChan
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle, ctypes_byte_str,
-                        ctypes_byte_str, ctypes.c_int]
+        if not self.debug_mode:
+            print("Not debug mode")
+            cfunc = lib_importer.windll.DAQmxCreateDOChan
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle, ctypes_byte_str,
+                            ctypes_byte_str, ctypes.c_int]
 
-        error_code = cfunc(
-            self._handle, lines, name_to_assign_to_lines, line_grouping.value)
-        check_for_error(error_code)
+            error_code = cfunc(
+                self._handle, lines, name_to_assign_to_lines, line_grouping.value)
+            check_for_error(error_code)
 
-        return self._create_chan(lines, line_grouping, name_to_assign_to_lines)
+            return self._create_chan(lines, line_grouping, name_to_assign_to_lines)
+        else:
+            print("Successfully added DO channel.")
+            # TODO: Investigate how to assign channels to a taskHandle object.
+            return 0    # Success message
+            # return self._create_chan(lines, line_grouping, name_to_assign_to_lines)
 
