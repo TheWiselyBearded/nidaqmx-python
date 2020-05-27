@@ -28,14 +28,18 @@ class Device(object):
     """
     Represents a DAQmx device.
     """
-    __slots__ = ['_name', '__weakref__']
+    __slots__ = ['_name', '__debug_mode', '__weakref__']    
 
-    def __init__(self, name):
+    def __init__(self, name, debug_mode =False):
         """
         Args:
             name (str): Specifies the name of the device.
         """
         self._name = name
+        self.debug_mode = debug_mode
+        if (self.debug_mode):
+            print("Device initialized with name:\t" + self.name)
+            # print("Device - Debug_mode parameter passed:\t" + str(debug_mode))
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -50,6 +54,14 @@ class Device(object):
 
     def __repr__(self):
         return 'Device(name={0})'.format(self._name)
+
+    @property
+    def debug_mode(self):
+        return self.__debug_mode
+
+    @debug_mode.setter
+    def debug_mode(self, x):
+        self.__debug_mode = x        
 
     @property
     def name(self):
@@ -2208,16 +2220,21 @@ class Device(object):
         the task, use DAQmx Start to restart the task or use DAQmx Stop
         to reset the task without starting it.
         """
-        cfunc = lib_importer.windll.DAQmxResetDevice
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        ctypes_byte_str]
+        if not self.debug_mode:
+            cfunc = lib_importer.windll.DAQmxResetDevice
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            ctypes_byte_str]
 
-        error_code = cfunc(
-            self._name)
-        check_for_error(error_code)
+            error_code = cfunc(
+                self._name)
+            check_for_error(error_code)
+        else:
+            # Call the DAQmxResetDevice
+            print("Devices reset")
+            return 0
 
     def self_test_device(self):
         """

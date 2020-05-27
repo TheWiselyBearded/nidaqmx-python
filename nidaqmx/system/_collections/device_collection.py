@@ -31,10 +31,23 @@ class DeviceCollection(Sequence):
             return item.name in device_names
         return False
 
+    @property
+    def debug_mode(self):
+        return self.__debug_mode
+
+    @debug_mode.setter
+    def debug_mode(self, x):
+        self.__debug_mode = x
+
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return True
         return False
+
+    def __init__(self, debug_mode=False):
+        self.debug_mode = debug_mode
+        # if self.debug_mode:
+        #     print("device_collection debug_mode:\t" + str(self.debug_mode))
 
     def __getitem__(self, index):
         """
@@ -72,7 +85,9 @@ class DeviceCollection(Sequence):
 
     def __iter__(self):
         for device_name in self.device_names:
-            yield Device(device_name)
+            # if (self.debug_mode):
+            #     print("device_collection.device_name iter:\t" + str(device_name))
+            yield Device(device_name, self.debug_mode)
 
     def __len__(self):
         return len(self.device_names)
@@ -93,29 +108,32 @@ class DeviceCollection(Sequence):
         List[str]: Indicates the names of all devices on this device
             collection.
         """
-        cfunc = lib_importer.windll.DAQmxGetSysDevNames
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        ctypes.c_char_p, ctypes.c_uint]
+        if not self.debug_mode:
+            cfunc = lib_importer.windll.DAQmxGetSysDevNames
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            ctypes.c_char_p, ctypes.c_uint]
 
-        temp_size = 0
-        while True:
-            val = ctypes.create_string_buffer(temp_size)
+            temp_size = 0
+            while True:
+                val = ctypes.create_string_buffer(temp_size)
 
-            size_or_code = cfunc(
-                val, temp_size)
+                size_or_code = cfunc(
+                    val, temp_size)
 
-            if is_string_buffer_too_small(size_or_code):
-                # Buffer size must have changed between calls; check again.
-                temp_size = 0
-            elif size_or_code > 0 and temp_size == 0:
-                # Buffer size obtained, use to retrieve data.
-                temp_size = size_or_code
-            else:
-                break
+                if is_string_buffer_too_small(size_or_code):
+                    # Buffer size must have changed between calls; check again.
+                    temp_size = 0
+                elif size_or_code > 0 and temp_size == 0:
+                    # Buffer size obtained, use to retrieve data.
+                    temp_size = size_or_code
+                else:
+                    break
 
-        check_for_error(size_or_code)
+            check_for_error(size_or_code)
 
-        return unflatten_channel_string(val.value.decode('ascii'))
+            return unflatten_channel_string(val.value.decode('ascii'))
+        else:
+            return ["cDAQ1Mod1","cDAQ1Mod2"]

@@ -37,13 +37,25 @@ class System(object):
     operations on DAQ hardware, and creates classes from which you can get
     information about the hardware.
     """
-
     @staticmethod
-    def local():
+    def local(debug_mode):
         """
         nidaqmx.system.system.System: Represents the local DAQmx system.
         """
-        return System()
+        return System(debug_mode)
+
+    def __init__(self, debug_mode=False):
+        self.debug_mode = debug_mode
+        if self.debug_mode:
+            print("local debug_mode status of system:\t" + str(debug_mode))
+
+    @property
+    def debug_mode(self):
+        return self.__debug_mode
+
+    @debug_mode.setter
+    def debug_mode(self, x):
+        self.__debug_mode = x
 
     @property
     def devices(self):
@@ -51,7 +63,9 @@ class System(object):
         nidaqmx.system._collections.DeviceCollection: Indicates the
             collection of devices for this DAQmx system.
         """
-        return DeviceCollection()
+        # if self.debug_mode:
+        #     print("system.devices debug_mode:\t" + str(self.debug_mode))
+        return DeviceCollection(self.debug_mode)
 
     @property
     def driver_version(self):
@@ -95,7 +109,7 @@ class System(object):
         nidaqmx.system._collections.PersistedTaskCollection: Indicates
             the collection of saved tasks for this DAQmx system.
         """
-        return PersistedTaskCollection()
+        return PersistedTaskCollection(self.debug_mode)
 
     @property
     def _major_version(self):

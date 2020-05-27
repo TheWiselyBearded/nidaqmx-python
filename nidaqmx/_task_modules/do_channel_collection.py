@@ -32,7 +32,10 @@ class DOChannelCollection(ChannelCollection):
         self.debug_mode = debug_mode
         if not debug_mode:
             super(DOChannelCollection, self).__init__(task_handle)
-        super(DOChannelCollection, self).__init__(0)
+        else:
+            super(DOChannelCollection, self).__init__(0)
+            print("Digital Out in Debug Mode")
+
 
     def _create_chan(self, lines, line_grouping, name_to_assign_to_lines=''):
         """
@@ -118,7 +121,7 @@ class DOChannelCollection(ChannelCollection):
 
             return self._create_chan(lines, line_grouping, name_to_assign_to_lines)
         else:
-            print("Successfully added DO channel.")
+            print("do_channel_collection - Successfully added DO channel.")
             # TODO: Investigate how to assign channels to a taskHandle object.
             return 0    # Success message
             # return self._create_chan(lines, line_grouping, name_to_assign_to_lines)

@@ -427,7 +427,6 @@ class Level(Enum):
 
 
 class LineGrouping(Enum):
-    print("LG")
     CHAN_PER_LINE = 0  #: One Channel For Each Line
     CHAN_FOR_ALL_LINES = 1  #: One Channel For All Lines
 
