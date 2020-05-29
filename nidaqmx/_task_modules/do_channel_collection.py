@@ -33,8 +33,8 @@ class DOChannelCollection(ChannelCollection):
         if not debug_mode:
             super(DOChannelCollection, self).__init__(task_handle)
         else:
-            super(DOChannelCollection, self).__init__(0)
-            print("Digital Out in Debug Mode")
+            super(DOChannelCollection, self).__init__(0, self.debug_mode)
+            # print("Digital Out in Debug Mode")
 
 
     def _create_chan(self, lines, line_grouping, name_to_assign_to_lines=''):
@@ -111,7 +111,6 @@ class DOChannelCollection(ChannelCollection):
             Indicates the newly created channel object.
         """
         if not self.debug_mode:
-            print("Not debug mode")
             cfunc = lib_importer.windll.DAQmxCreateDOChan
             if cfunc.argtypes is None:
                 with cfunc.arglock:

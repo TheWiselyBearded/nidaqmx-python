@@ -7,6 +7,7 @@ import ctypes
 import numpy
 import six
 import warnings
+import time
 
 from nidaqmx._lib import lib_importer, ctypes_byte_str, c_bool32
 from nidaqmx._task_modules.channels.channel import Channel
@@ -189,8 +190,16 @@ class Task(object):
             a channel object that represents the entire list of virtual 
             channels in this task.
         """
-        return Channel._factory(
-            self._handle, flatten_channel_string(self.channel_names))
+        if not self.debug_mode:
+            return Channel._factory(
+                self._handle, flatten_channel_string(self.channel_names))
+        else:
+            channels = ""
+            for channel in self.channel_names:
+                channels += str(channel)
+                channels += ","
+            # return flatten_channel_string(self.channel_names)
+            return channels
 
     @property
     def channel_names(self):
@@ -225,8 +234,12 @@ class Task(object):
             check_for_error(size_or_code)
 
             return unflatten_channel_string(val.value.decode('ascii'))
-        else:       # TODO: Acquire defined channels for task comm line by editing Channel_Collection.py
-            return ["Channel1","Channel2"]
+        else:
+            channels = []
+            if (self.do_channels):
+                channels.append(self.do_channels)
+            return channels
+            # return ["Channel1","Channel2"]
 
 
     @property
@@ -414,9 +427,9 @@ class Task(object):
         self._ci_channels = CIChannelCollection(task_handle)
         self._co_channels = COChannelCollection(task_handle)
         self._di_channels = DIChannelCollection(task_handle)
-        self._do_channels = DOChannelCollection(task_handle)
-        if (self.debug_mode):
-            self.do_channels.debug_mode = self.debug_mode
+        self._do_channels = DOChannelCollection(task_handle, self.debug_mode)
+        # if (self.debug_mode):
+        #     self.do_channels.debug_mode = self.debug_mode
         self._export_signals = ExportSignals(task_handle)
         self._in_stream = InStream(self)
         self._timing = Timing(task_handle)
@@ -567,8 +580,12 @@ class Task(object):
             check_for_error(error_code)
             return is_task_done.value
         else:
-            # TODO: Determine a way of probing task status virtually.
-            return 0
+            # TODO: Add additional safe-checks to verify a user instantiated a task object correctly.
+            if (len(self.channels)>0):
+                time.sleep(0.1) # Stall execution for 10ms to reflect valve state switching.
+                return True
+            else:
+                return False
 
     def read(self, number_of_samples_per_channel=NUM_SAMPLES_UNSET,
              timeout=10.0):

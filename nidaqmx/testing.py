@@ -39,6 +39,8 @@ def test_digital_task_creation():
                 name_to_assign_to_lines=channel_name,
                 line_grouping=LineGrouping.CHAN_FOR_ALL_LINES)
     print("Channels:\t" + str(task.do_channels))
+    print("Channels:\t" + str(task.channels))
+    print("Is task done?:\t" + str(task.is_task_done()))
 
 def test_analog_task_creation():
     task = Task("Analog Task", debug_mode=True)

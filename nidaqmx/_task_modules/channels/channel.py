@@ -114,40 +114,43 @@ class Channel(object):
 
             Indicates an object that represents the specified channel.
         """
-        chan_type = ctypes.c_int()
+        if not self.debug_mode:
+            chan_type = ctypes.c_int()
 
-        cfunc = lib_importer.windll.DAQmxGetChanType
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle, ctypes_byte_str,
-                        ctypes.POINTER(ctypes.c_int)]
+            cfunc = lib_importer.windll.DAQmxGetChanType
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle, ctypes_byte_str,
+                            ctypes.POINTER(ctypes.c_int)]
 
-        error_code = cfunc(
-            task_handle, virtual_or_physical_name, ctypes.byref(chan_type))
-        check_for_error(error_code)
+            error_code = cfunc(
+                task_handle, virtual_or_physical_name, ctypes.byref(chan_type))
+            check_for_error(error_code)
 
-        channel_type = ChannelType(chan_type.value)
+            channel_type = ChannelType(chan_type.value)
 
-        if channel_type == ChannelType.ANALOG_INPUT:
-            return nidaqmx._task_modules.channels.AIChannel(
-                task_handle, virtual_or_physical_name)
-        elif channel_type == ChannelType.ANALOG_OUTPUT:
-            return nidaqmx._task_modules.channels.AOChannel(
-                task_handle, virtual_or_physical_name)
-        elif channel_type == ChannelType.COUNTER_INPUT:
-            return nidaqmx._task_modules.channels.CIChannel(
-                task_handle, virtual_or_physical_name)
-        elif channel_type == ChannelType.COUNTER_OUTPUT:
-            return nidaqmx._task_modules.channels.COChannel(
-                task_handle, virtual_or_physical_name)
-        elif channel_type == ChannelType.DIGITAL_INPUT:
-            return nidaqmx._task_modules.channels.DIChannel(
-                task_handle, virtual_or_physical_name)
-        elif channel_type == ChannelType.DIGITAL_OUTPUT:
-            return nidaqmx._task_modules.channels.DOChannel(
-                task_handle, virtual_or_physical_name)
+            if channel_type == ChannelType.ANALOG_INPUT:
+                return nidaqmx._task_modules.channels.AIChannel(
+                    task_handle, virtual_or_physical_name)
+            elif channel_type == ChannelType.ANALOG_OUTPUT:
+                return nidaqmx._task_modules.channels.AOChannel(
+                    task_handle, virtual_or_physical_name)
+            elif channel_type == ChannelType.COUNTER_INPUT:
+                return nidaqmx._task_modules.channels.CIChannel(
+                    task_handle, virtual_or_physical_name)
+            elif channel_type == ChannelType.COUNTER_OUTPUT:
+                return nidaqmx._task_modules.channels.COChannel(
+                    task_handle, virtual_or_physical_name)
+            elif channel_type == ChannelType.DIGITAL_INPUT:
+                return nidaqmx._task_modules.channels.DIChannel(
+                    task_handle, virtual_or_physical_name)
+            elif channel_type == ChannelType.DIGITAL_OUTPUT:
+                return nidaqmx._task_modules.channels.DOChannel(
+                    task_handle, virtual_or_physical_name)
+        else:
+            channel_type = ChannelType(chan_type.value)
 
     @property
     def name(self):
