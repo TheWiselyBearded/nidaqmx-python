@@ -100,7 +100,9 @@ class Task(object):
             # self._task_handle = ctypes.c_uint
             if not (len(new_task_name)  > 0):
                 new_task_name = "Task"
-                self.name = new_task_name
+                self._name = new_task_name
+            else:
+                self._name = new_task_name
             self._handle = ctypes.c_uint
             print("Handle", self._handle)
             self._initialize(self._handle)
@@ -137,7 +139,8 @@ class Task(object):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return 'Task(name={0})'.format(self.name)
+        return 'Task(name={0})'.format(self._name)
+
 
     @property
     def name(self):
@@ -171,8 +174,13 @@ class Task(object):
             check_for_error(size_or_code)
 
             return val.value.decode('ascii')    # Expects string generated of char bytes array.
-        else:   # TODO: Test this string return, lack of encoding/formatting may cause issues.
-            return "Dummy"
+        else:
+            return self._name
+
+    @name.setter
+    def name(self, x):
+        print("Attempt to set name")
+        self._name = x
 
     @property
     def channels(self):
@@ -399,7 +407,7 @@ class Task(object):
         """
         # Saved name is used in self.close() to throw graceful error on
         # double closes.
-        self._saved_name = self.name
+        self._saved_name = self._name
 
         self._ai_channels = AIChannelCollection(task_handle)
         self._ao_channels = AOChannelCollection(task_handle)
@@ -736,7 +744,7 @@ class Task(object):
                 'Read failed, because there are no channels in this task from '
                 'which data can be read.',
                 DAQmxErrors.READ_NO_INPUT_CHANS_IN_TASK.value,
-                task_name=self.name)
+                task_name=self._name)
 
         if (read_chan_type == ChannelType.COUNTER_INPUT and
                 (meas_type == UsageTypeCI.PULSE_FREQ or
@@ -1137,7 +1145,7 @@ class Task(object):
             'Number of Lines Per Channel in Data: {1}'
             .format(num_lines_expected, num_lines_in_data),
             DAQmxErrors.NUM_LINES_MISMATCH_IN_READ_OR_WRITE.value,
-            task_name=self.name)
+            task_name=self._name)
 
     def _raise_invalid_write_num_chans_error(
             self, number_of_channels, number_of_channels_in_data):
@@ -1151,7 +1159,7 @@ class Task(object):
             'Number of Channels in Task: {0}\n'
             'Number of Channels in Data: {1}'
             .format(number_of_channels, number_of_channels_in_data),
-            DAQmxErrors.WRITE_NUM_CHANS_MISMATCH.value, task_name=self.name)
+            DAQmxErrors.WRITE_NUM_CHANS_MISMATCH.value, task_name=self._name)
 
     def write(self, data, auto_start=AUTO_START_UNSET, timeout=10.0):
         """
@@ -1297,7 +1305,7 @@ class Task(object):
                         'boolean samples when there is one digital line per '
                         'channel in a task.\n\n'
                         'Requested sample type: {0}'.format(type(element)),
-                        DAQmxErrors.UNKNOWN.value, task_name=self.name)
+                        DAQmxErrors.UNKNOWN.value, task_name=self._name)
 
                 data = numpy.asarray(data, dtype=numpy.bool)
                 return _write_digital_lines(
@@ -1311,7 +1319,7 @@ class Task(object):
                         'unsigned 32-bit integer samples when there are '
                         'multiple digital lines per channel in a task.\n\n'
                         'Requested sample type: {0}'.format(type(element)),
-                        DAQmxErrors.UNKNOWN.value, task_name=self.name)
+                        DAQmxErrors.UNKNOWN.value, task_name=self._name)
 
                 data = numpy.asarray(data, dtype=numpy.uint32)
                 return _write_digital_u_32(
@@ -1371,4 +1379,4 @@ class Task(object):
                 'Write failed, because there are no output channels in this '
                 'task to which data can be written.',
                 DAQmxErrors.WRITE_NO_OUTPUT_CHANS_IN_TASK.value,
-                task_name=self.name)
+                task_name=self._name)
