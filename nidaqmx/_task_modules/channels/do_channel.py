@@ -19,9 +19,18 @@ class DOChannel(Channel):
     """
     Represents one or more digital output virtual channels and their properties.
     """
-    __slots__ = []
+    __slots__ = ['__debug_mode']
 
-    def __repr__(self):
+    @property
+    def debug_mode(self):
+        return self.__debug_mode
+
+    @debug_mode.setter
+    def debug_mode(self, x):
+        self.__debug_mode = x
+
+    def __repr__(self, debug_mode):
+        self.debug_mode = debug_mode
         return 'DOChannel(name={0})'.format(self._name)
 
     @property

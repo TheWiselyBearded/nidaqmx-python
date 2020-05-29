@@ -20,9 +20,17 @@ class Channel(object):
     """
     Represents virtual channel or a list of virtual channels.
     """
-    __slots__ = ['_handle', '_name', '__weakref__']
+    __slots__ = ['_handle', '_name', '__weakref__', '__debug_mode']
 
-    def __init__(self, task_handle, virtual_or_physical_name):
+    @property
+    def debug_mode(self):
+        return self.__debug_mode
+
+    @debug_mode.setter
+    def debug_mode(self, x):
+        self.__debug_mode = x
+
+    def __init__(self, task_handle, virtual_or_physical_name, debug_mode =False):
         """
         Args:
             task_handle (TaskHandle): Specifies the handle of the task that
@@ -32,6 +40,9 @@ class Channel(object):
         """
         self._handle = task_handle
         self._name = virtual_or_physical_name
+        self.debug_mode = debug_mode
+        # if (self.debug_mode):
+        #     print("Channel initialized in debug mode with name:\t" + self.name)
 
     def __add__(self, other):
         if not isinstance(other, self.__class__):

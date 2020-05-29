@@ -54,25 +54,30 @@ class DOChannelCollection(ChannelCollection):
             
             Specifies the newly created DOChannel object.
         """
-        unflattened_lines = unflatten_channel_string(lines)
-        num_lines = len(unflattened_lines)
-        
-        if line_grouping == LineGrouping.CHAN_FOR_ALL_LINES:
-            if name_to_assign_to_lines or num_lines == 1:
-                name = lines
-            else:
-                name = unflattened_lines[0] + '...'
-        else:
-            if name_to_assign_to_lines:
-                if num_lines > 1:
-                    name = '{0}0:{1}'.format(
-                        name_to_assign_to_lines, num_lines-1)
+        if not self.debug_mode:
+            unflattened_lines = unflatten_channel_string(lines)
+            num_lines = len(unflattened_lines)
+            
+            if line_grouping == LineGrouping.CHAN_FOR_ALL_LINES:
+                if name_to_assign_to_lines or num_lines == 1:
+                    name = lines
                 else:
-                    name = name_to_assign_to_lines
+                    name = unflattened_lines[0] + '...'
             else:
-                name = lines
+                if name_to_assign_to_lines:
+                    if num_lines > 1:
+                        name = '{0}0:{1}'.format(
+                            name_to_assign_to_lines, num_lines-1)
+                    else:
+                        name = name_to_assign_to_lines
+                else:
+                    name = lines
 
-        return DOChannel(self._handle, name)
+            return DOChannel(self._handle, name)
+        else:
+            # print("do_chann_coll - Assigned name to channel lines")
+            name = name_to_assign_to_lines
+            return DOChannel(self._handle, name, self.debug_mode)
 
     def add_do_chan(
             self, lines, name_to_assign_to_lines="",
@@ -121,8 +126,11 @@ class DOChannelCollection(ChannelCollection):
 
             return self._create_chan(lines, line_grouping, name_to_assign_to_lines)
         else:
-            print("do_channel_collection - Successfully added DO channel.")
-            # TODO: Investigate how to assign channels to a taskHandle object.
-            return 0    # Success message
-            # return self._create_chan(lines, line_grouping, name_to_assign_to_lines)
+            if not lines or not name_to_assign_to_lines:
+                print('DaqWarning caught: User did not define communication lines')
+                return -1
+            else:
+                print("do_channel_collection - Successfully added DO channel.")
+                self._create_chan(lines, line_grouping, name_to_assign_to_lines)
+                return 0    # Success message
 

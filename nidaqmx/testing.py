@@ -14,7 +14,12 @@ import nidaqmx
 from constants import (
 LineGrouping, AcquisitionType)
 from task import Task 
-# from nidaqmx._task_modules.do_channel_collection import DOChannelCollection
+
+'''
+TODO:
+- Determine whether debug_mode can be a custom object 
+with flags for printing additional text.
+'''
 
 def test_device_creation():
     print("Testing device creation")
@@ -33,7 +38,7 @@ def test_digital_task_creation():
                 digital_device_name + "/port0",
                 name_to_assign_to_lines=channel_name,
                 line_grouping=LineGrouping.CHAN_FOR_ALL_LINES)
-    # print("Channels:\t" + task.do_channels)
+    print("Channels:\t" + str(task.do_channels))
 
 def test_analog_task_creation():
     task = Task("Analog Task", debug_mode=True)
@@ -47,8 +52,8 @@ def test_analog_task_creation():
 
 if __name__ == "__main__":
     # print(sys.path)
-    test_device_creation()
+    # test_device_creation()
     print("\n")
     test_digital_task_creation()
-    print("\n")
-    test_analog_task_creation()
+    # print("\n")
+    # test_analog_task_creation()
