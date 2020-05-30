@@ -47,6 +47,7 @@ def test_duty_cycle():
     while not task.is_task_done():
         print("Is task done?:\t" + str(task.is_task_done()))
     print("Is task done?:\t" + str(task.is_task_done()))
+    task.stop()
 
 def test_analog_task_creation():
     task = Task("Analog Task", debug_mode=True)

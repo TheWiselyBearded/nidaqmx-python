@@ -148,7 +148,6 @@ class Task(object):
 
     @duty_cycle.setter
     def duty_cycle(self, x):
-        print("Attempt to set duty cycle")
         self._duty_cycle = x
 
     @property
@@ -1127,7 +1126,8 @@ class Task(object):
             error_code = cfunc(self._handle)
             check_for_error(error_code)
         else:
-            return 0
+            if (self.is_task_done()):
+                return 0
 
     def wait_until_done(self, timeout=10.0):
         """
