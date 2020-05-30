@@ -430,7 +430,7 @@ class Task(object):
         self._saved_name = self._name
 
         self._ai_channels = AIChannelCollection(task_handle)
-        self._ao_channels = AOChannelCollection(task_handle)
+        self._ao_channels = AOChannelCollection(task_handle, self.debug_mode)
         self._ci_channels = CIChannelCollection(task_handle)
         self._co_channels = COChannelCollection(task_handle)
         self._di_channels = DIChannelCollection(task_handle)

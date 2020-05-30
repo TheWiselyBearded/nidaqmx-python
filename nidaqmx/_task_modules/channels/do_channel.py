@@ -29,7 +29,7 @@ class DOChannel(Channel):
     def debug_mode(self, x):
         self.__debug_mode = x
 
-    def __repr__(self, debug_mode):
+    def __repr__(self, debug_mode=False):
         self.debug_mode = debug_mode
         return 'DOChannel(name={0})'.format(self._name)
 

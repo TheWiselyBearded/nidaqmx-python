@@ -15,11 +15,23 @@ from nidaqmx.constants import (
 
 
 class AOChannelCollection(ChannelCollection):
+    @property
+    def debug_mode(self):
+        return self.__debug_mode
+
+    @debug_mode.setter
+    def debug_mode(self, x):
+        self.__debug_mode=x
+
     """
     Contains the collection of analog output channels for a DAQmx Task.
     """
-    def __init__(self, task_handle):
-        super(AOChannelCollection, self).__init__(task_handle)
+    def __init__(self, task_handle, debug_mode = False):
+        self.debug_mode = debug_mode
+        if not debug_mode:
+            super(AOChannelCollection, self).__init__(task_handle)
+        else:
+            super(AOChannelCollection, self).__init__(0, self.debug_mode)
 
     def _create_chan(self, physical_channel, name_to_assign_to_channel=''):
         """
@@ -35,18 +47,23 @@ class AOChannelCollection(ChannelCollection):
             
             Specifies the newly created AOChannel object.
         """
-        if name_to_assign_to_channel:
-            num_channels = len(unflatten_channel_string(physical_channel))
+        if not self.debug_mode:
+            if name_to_assign_to_channel:
+                num_channels = len(unflatten_channel_string(physical_channel))
 
-            if num_channels > 1:
-                name = '{0}0:{1}'.format(
-                    name_to_assign_to_channel, num_channels-1)
+                if num_channels > 1:
+                    name = '{0}0:{1}'.format(
+                        name_to_assign_to_channel, num_channels-1)
+                else:
+                    name = name_to_assign_to_channel
             else:
-                name = name_to_assign_to_channel
-        else:
-            name = physical_channel
+                name = physical_channel
 
-        return AOChannel(self._handle, name)
+            return AOChannel(self._handle, name)
+        else:
+            # print("ao_chann_coll - Assigned name to channel lines")
+            name = name_to_assign_to_channel
+            return AOChannel(self._handle, name, self.debug_mode)
 
     def add_ao_current_chan(
             self, physical_channel, name_to_assign_to_channel="", min_val=0.0,
@@ -176,19 +193,29 @@ class AOChannelCollection(ChannelCollection):
             
             Indicates the newly created channel object.
         """
-        cfunc = lib_importer.windll.DAQmxCreateAOVoltageChan
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle, ctypes_byte_str,
-                        ctypes_byte_str, ctypes.c_double, ctypes.c_double,
-                        ctypes.c_int, ctypes_byte_str]
+        if not self.debug_mode:
+            cfunc = lib_importer.windll.DAQmxCreateAOVoltageChan
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle, ctypes_byte_str,
+                            ctypes_byte_str, ctypes.c_double, ctypes.c_double,
+                            ctypes.c_int, ctypes_byte_str]
 
-        error_code = cfunc(
-            self._handle, physical_channel, name_to_assign_to_channel,
-            min_val, max_val, units.value, custom_scale_name)
-        check_for_error(error_code)
+            error_code = cfunc(
+                self._handle, physical_channel, name_to_assign_to_channel,
+                min_val, max_val, units.value, custom_scale_name)
+            check_for_error(error_code)
 
-        return self._create_chan(physical_channel, name_to_assign_to_channel)
+            return self._create_chan(physical_channel, name_to_assign_to_channel)
+        else:
+            if not physical_channel:
+                print('DaqWarning caught: User did not define communication lines')
+                return -1
+            else:
+                # print("ao_channel_collection - Successfully added AO channel.")
+                print("ao_channel_collection :\t" + physical_channel)
+                self._create_chan(physical_channel, name_to_assign_to_channel)
+                return 0    # Success message
 

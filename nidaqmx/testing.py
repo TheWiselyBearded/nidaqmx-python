@@ -51,13 +51,15 @@ def test_duty_cycle():
 
 def test_analog_task_creation():
     task = Task("Analog Task", debug_mode=True)
-    digital_device_name = "cDAQ1Mod1"
-    channel_name="channel"
     print("Task name", task.name)
-    # NIDAQMXChannel =task.do_channels.add_do_chan(
-    #             digital_device_name + "/port0",
-    #             name_to_assign_to_lines=channel_name,
-    #             line_grouping=LineGrouping.CHAN_FOR_ALL_LINES)
+    analog_device_name = "cDAQ1Mod2"
+    analog_channels = []
+    mfc_flat_list = [1,0,2]
+    for mfc in mfc_flat_list:
+        analog_channels.append(mfc)
+    for chan in analog_channels:
+        ao = analog_device_name + "/ao%d" % chan
+        task.ao_channels.add_ao_voltage_chan(ao)
 
 if __name__ == "__main__":
     # print(sys.path)Do
@@ -66,5 +68,5 @@ if __name__ == "__main__":
     test_digital_task_creation()
     print("\n")
     test_duty_cycle()
-    # print("\n")
-    # test_analog_task_creation()
+    print("\n")
+    test_analog_task_creation()
