@@ -130,6 +130,6 @@ class DOChannelCollection(ChannelCollection):
                 return -1
             else:
                 print("do_channel_collection - Successfully added DO channel.")
-                self._create_chan(lines, line_grouping, name_to_assign_to_lines)
-                return 0    # Success message
+                return self._create_chan(lines, line_grouping, name_to_assign_to_lines)
+                # return 0    # Success message
 

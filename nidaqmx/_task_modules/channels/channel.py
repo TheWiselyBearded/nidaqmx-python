@@ -100,7 +100,7 @@ class Channel(object):
         return 'Channel(name={0})'.format(self.name)
 
     @staticmethod
-    def _factory(task_handle, virtual_or_physical_name):
+    def _factory(task_handle, virtual_or_physical_name, debug_mode = False):
         """
         Implements the factory pattern for nidaqmx channels.
 
@@ -114,7 +114,7 @@ class Channel(object):
 
             Indicates an object that represents the specified channel.
         """
-        if not self.debug_mode:
+        if not debug_mode:
             chan_type = ctypes.c_int()
 
             cfunc = lib_importer.windll.DAQmxGetChanType
@@ -150,7 +150,10 @@ class Channel(object):
                 return nidaqmx._task_modules.channels.DOChannel(
                     task_handle, virtual_or_physical_name)
         else:
-            channel_type = ChannelType(chan_type.value)
+            print("channel - Debug Mode specifying channel type")
+            print("Channels parameter:\t" + virtual_or_physical_name)
+            channel_type = ChannelType.DIGITAL_OUTPUT
+            channel_type = ChannelType.ANALOG_OUTPUT
 
     @property
     def name(self):

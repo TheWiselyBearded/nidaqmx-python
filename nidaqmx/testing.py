@@ -76,13 +76,29 @@ def test_analog_task_creation():
         ao = analog_device_name + "/ao%d" % chan
         task.ao_channels.add_ao_voltage_chan(ao)
 
+def test_digital_write_task():
+    task = Task("Digital Task", debug_mode=True)
+    digital_device_name = "cDAQ1Mod1"
+    channel_name="channel"
+    print("Task name", task.name)
+    NIDAQMXChannel =task.do_channels.add_do_chan(
+                digital_device_name + "/port0",
+                name_to_assign_to_lines=channel_name,
+                line_grouping=LineGrouping.CHAN_FOR_ALL_LINES)
+    task.add_task_channel(NIDAQMXChannel)
+    print("Channels:\t" + str(task.task_channels))
+    # print("Channels:\t" + str(task.channels))
+    
+
 if __name__ == "__main__":
     # test_device_creation()
+    # print("\n")
+    # test_digital_task_creation()
+    # print("\n")
+    # test_duty_cycle()
+    # print("\n")
+    # test_analog_task_creation()
+    # print("\n")
+    # test_sampling_clock_configuration()
     print("\n")
-    test_digital_task_creation()
-    print("\n")
-    test_duty_cycle()
-    print("\n")
-    test_analog_task_creation()
-    print("\n")
-    test_sampling_clock_configuration()
+    test_digital_write_task()

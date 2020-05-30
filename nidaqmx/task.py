@@ -83,6 +83,7 @@ class Task(object):
                 results in an error.
         """
         self.debug_mode = debug_mode
+        self.task_channels = []
         if not self.debug_mode:
             self._handle = lib_importer.task_handle(0)
             cfunc = lib_importer.windll.DAQmxCreateTask
@@ -151,6 +152,18 @@ class Task(object):
         self._duty_cycle = x
 
     @property
+    def task_channels(self):
+        return self._task_channels
+
+    @task_channels.setter
+    def task_channels(self, x):
+        self._task_channels = x
+
+    def add_task_channel(self, channel):
+        self.task_channels.append(channel)
+        print("Added task channel:\t" + str(channel))
+
+    @property
     def name(self):
         """
         str: Indicates the name of the task.
@@ -205,6 +218,10 @@ class Task(object):
             for channel in self.channel_names:
                 channels += str(channel)
                 channels += ","
+            print(channels)
+            print("\ntask.channels - channel factory entry")
+            Channel._factory(
+                self._handle, channels, self.debug_mode)
             # return flatten_channel_string(self.channel_names)
             return channels
 
@@ -245,6 +262,8 @@ class Task(object):
             channels = []
             if (self.do_channels):
                 channels.append(self.do_channels)
+            if (self.ao_channels):
+                channels.append(self.ao_channels)
             return channels
             # return ["Channel1","Channel2"]
 
@@ -1252,156 +1271,161 @@ class Task(object):
             Specifies the actual number of samples this method
             successfully wrote.
         """
-        channels_to_write = self.channels
-        number_of_channels = len(channels_to_write.channel_names)
-        write_chan_type = channels_to_write.chan_type
+        if not self.debug_mode:
+            channels_to_write = self.channels
+            number_of_channels = len(channels_to_write.channel_names)
+            write_chan_type = channels_to_write.chan_type
 
-        element = None
-        if number_of_channels == 1:
-            if isinstance(data, list):
-                if isinstance(data[0], list):
-                    self._raise_invalid_write_num_chans_error(
-                        number_of_channels, len(data))
+            element = None
+            if number_of_channels == 1:
+                if isinstance(data, list):
+                    if isinstance(data[0], list):
+                        self._raise_invalid_write_num_chans_error(
+                            number_of_channels, len(data))
 
-                number_of_samples_per_channel = len(data)
-                element = data[0]
-
-            elif isinstance(data, numpy.ndarray):
-                if len(data.shape) == 2:
-                    self._raise_invalid_write_num_chans_error(
-                        number_of_channels, data.shape[0])
-
-                number_of_samples_per_channel = len(data)
-                element = data[0]
-
-            else:
-                number_of_samples_per_channel = 1
-                element = data
-
-        else:
-            if isinstance(data, list):
-                if len(data) != number_of_channels:
-                    self._raise_invalid_write_num_chans_error(
-                        number_of_channels, len(data))
-
-                if isinstance(data[0], list):
-                    number_of_samples_per_channel = len(data[0])
-                    element = data[0][0]
-                else:
-                    number_of_samples_per_channel = 1
+                    number_of_samples_per_channel = len(data)
                     element = data[0]
 
-            elif isinstance(data, numpy.ndarray):
-                if data.shape[0] != number_of_channels:
-                    self._raise_invalid_write_num_chans_error(
-                        number_of_channels, data.shape[0])
+                elif isinstance(data, numpy.ndarray):
+                    if len(data.shape) == 2:
+                        self._raise_invalid_write_num_chans_error(
+                            number_of_channels, data.shape[0])
 
-                if len(data.shape) == 2:
-                    number_of_samples_per_channel = data.shape[1]
-                    element = data[0][0]
-                else:
-                    number_of_samples_per_channel = 1
+                    number_of_samples_per_channel = len(data)
                     element = data[0]
 
+                else:
+                    number_of_samples_per_channel = 1
+                    element = data
+
             else:
-                self._raise_invalid_write_num_chans_error(
-                    number_of_channels, 1)
+                if isinstance(data, list):
+                    if len(data) != number_of_channels:
+                        self._raise_invalid_write_num_chans_error(
+                            number_of_channels, len(data))
 
-        if auto_start is AUTO_START_UNSET:
-            if number_of_samples_per_channel > 1:
-                auto_start = False
+                    if isinstance(data[0], list):
+                        number_of_samples_per_channel = len(data[0])
+                        element = data[0][0]
+                    else:
+                        number_of_samples_per_channel = 1
+                        element = data[0]
+
+                elif isinstance(data, numpy.ndarray):
+                    if data.shape[0] != number_of_channels:
+                        self._raise_invalid_write_num_chans_error(
+                            number_of_channels, data.shape[0])
+
+                    if len(data.shape) == 2:
+                        number_of_samples_per_channel = data.shape[1]
+                        element = data[0][0]
+                    else:
+                        number_of_samples_per_channel = 1
+                        element = data[0]
+
+                else:
+                    self._raise_invalid_write_num_chans_error(
+                        number_of_channels, 1)
+
+            if auto_start is AUTO_START_UNSET:
+                if number_of_samples_per_channel > 1:
+                    auto_start = False
+                else:
+                    auto_start = True
+
+            # Analog Input
+            if write_chan_type == ChannelType.ANALOG_OUTPUT:
+                data = numpy.asarray(data, dtype=numpy.float64)
+                return _write_analog_f_64(
+                    self._handle, data, number_of_samples_per_channel, auto_start,
+                    timeout)
+
+            # Digital Input
+            elif write_chan_type == ChannelType.DIGITAL_OUTPUT:
+                if self.out_stream.do_num_booleans_per_chan == 1:
+                    if (not isinstance(element, bool) and
+                            not isinstance(element, numpy.bool_)):
+                        raise DaqError(
+                            'Write failed, because this write method only accepts '
+                            'boolean samples when there is one digital line per '
+                            'channel in a task.\n\n'
+                            'Requested sample type: {0}'.format(type(element)),
+                            DAQmxErrors.UNKNOWN.value, task_name=self._name)
+
+                    data = numpy.asarray(data, dtype=numpy.bool)
+                    return _write_digital_lines(
+                        self._handle, data, number_of_samples_per_channel,
+                        auto_start, timeout)
+                else:
+                    if (not isinstance(element, six.integer_types) and
+                            not isinstance(element, numpy.uint32)):
+                        raise DaqError(
+                            'Write failed, because this write method only accepts '
+                            'unsigned 32-bit integer samples when there are '
+                            'multiple digital lines per channel in a task.\n\n'
+                            'Requested sample type: {0}'.format(type(element)),
+                            DAQmxErrors.UNKNOWN.value, task_name=self._name)
+
+                    data = numpy.asarray(data, dtype=numpy.uint32)
+                    return _write_digital_u_32(
+                        self._handle, data, number_of_samples_per_channel,
+                        auto_start, timeout)
+
+            # Counter Input
+            elif write_chan_type == ChannelType.COUNTER_OUTPUT:
+                output_type = channels_to_write.co_output_type
+
+                if number_of_samples_per_channel == 1:
+                    data = [data]
+
+                if output_type == UsageTypeCO.PULSE_FREQUENCY:
+                    frequencies = []
+                    duty_cycles = []
+                    for sample in data:
+                        frequencies.append(sample.duty_cycle)
+                        duty_cycles.append(sample.freq)
+
+                    frequencies = numpy.asarray(frequencies, dtype=numpy.float64)
+                    duty_cycles = numpy.asarray(duty_cycles, dtype=numpy.float64)
+
+                    return _write_ctr_freq(
+                        self._handle, frequencies, duty_cycles,
+                        number_of_samples_per_channel, auto_start, timeout)
+
+                elif output_type == UsageTypeCO.PULSE_TIME:
+                    high_times = []
+                    low_times = []
+                    for sample in data:
+                        high_times.append(sample.high_time)
+                        low_times.append(sample.low_time)
+
+                    high_times = numpy.asarray(high_times, dtype=numpy.float64)
+                    low_times = numpy.asarray(low_times, dtype=numpy.float64)
+
+                    return _write_ctr_time(
+                        self._handle, high_times, low_times,
+                        number_of_samples_per_channel, auto_start, timeout)
+
+                elif output_type == UsageTypeCO.PULSE_TICKS:
+                    high_ticks = []
+                    low_ticks = []
+                    for sample in data:
+                        high_ticks.append(sample.high_tick)
+                        low_ticks.append(sample.low_tick)
+
+                    high_ticks = numpy.asarray(high_ticks, dtype=numpy.uint32)
+                    low_ticks = numpy.asarray(low_ticks, dtype=numpy.uint32)
+
+                    return _write_ctr_ticks(
+                        self._handle, high_ticks, low_ticks,
+                        number_of_samples_per_channel, auto_start, timeout)
             else:
-                auto_start = True
-
-        # Analog Input
-        if write_chan_type == ChannelType.ANALOG_OUTPUT:
-            data = numpy.asarray(data, dtype=numpy.float64)
-            return _write_analog_f_64(
-                self._handle, data, number_of_samples_per_channel, auto_start,
-                timeout)
-
-        # Digital Input
-        elif write_chan_type == ChannelType.DIGITAL_OUTPUT:
-            if self.out_stream.do_num_booleans_per_chan == 1:
-                if (not isinstance(element, bool) and
-                        not isinstance(element, numpy.bool_)):
-                    raise DaqError(
-                        'Write failed, because this write method only accepts '
-                        'boolean samples when there is one digital line per '
-                        'channel in a task.\n\n'
-                        'Requested sample type: {0}'.format(type(element)),
-                        DAQmxErrors.UNKNOWN.value, task_name=self._name)
-
-                data = numpy.asarray(data, dtype=numpy.bool)
-                return _write_digital_lines(
-                    self._handle, data, number_of_samples_per_channel,
-                    auto_start, timeout)
-            else:
-                if (not isinstance(element, six.integer_types) and
-                        not isinstance(element, numpy.uint32)):
-                    raise DaqError(
-                        'Write failed, because this write method only accepts '
-                        'unsigned 32-bit integer samples when there are '
-                        'multiple digital lines per channel in a task.\n\n'
-                        'Requested sample type: {0}'.format(type(element)),
-                        DAQmxErrors.UNKNOWN.value, task_name=self._name)
-
-                data = numpy.asarray(data, dtype=numpy.uint32)
-                return _write_digital_u_32(
-                    self._handle, data, number_of_samples_per_channel,
-                    auto_start, timeout)
-
-        # Counter Input
-        elif write_chan_type == ChannelType.COUNTER_OUTPUT:
-            output_type = channels_to_write.co_output_type
-
-            if number_of_samples_per_channel == 1:
-                data = [data]
-
-            if output_type == UsageTypeCO.PULSE_FREQUENCY:
-                frequencies = []
-                duty_cycles = []
-                for sample in data:
-                    frequencies.append(sample.duty_cycle)
-                    duty_cycles.append(sample.freq)
-
-                frequencies = numpy.asarray(frequencies, dtype=numpy.float64)
-                duty_cycles = numpy.asarray(duty_cycles, dtype=numpy.float64)
-
-                return _write_ctr_freq(
-                    self._handle, frequencies, duty_cycles,
-                    number_of_samples_per_channel, auto_start, timeout)
-
-            elif output_type == UsageTypeCO.PULSE_TIME:
-                high_times = []
-                low_times = []
-                for sample in data:
-                    high_times.append(sample.high_time)
-                    low_times.append(sample.low_time)
-
-                high_times = numpy.asarray(high_times, dtype=numpy.float64)
-                low_times = numpy.asarray(low_times, dtype=numpy.float64)
-
-                return _write_ctr_time(
-                    self._handle, high_times, low_times,
-                    number_of_samples_per_channel, auto_start, timeout)
-
-            elif output_type == UsageTypeCO.PULSE_TICKS:
-                high_ticks = []
-                low_ticks = []
-                for sample in data:
-                    high_ticks.append(sample.high_tick)
-                    low_ticks.append(sample.low_tick)
-
-                high_ticks = numpy.asarray(high_ticks, dtype=numpy.uint32)
-                low_ticks = numpy.asarray(low_ticks, dtype=numpy.uint32)
-
-                return _write_ctr_ticks(
-                    self._handle, high_ticks, low_ticks,
-                    number_of_samples_per_channel, auto_start, timeout)
+                raise DaqError(
+                    'Write failed, because there are no output channels in this '
+                    'task to which data can be written.',
+                    DAQmxErrors.WRITE_NO_OUTPUT_CHANS_IN_TASK.value,
+                    task_name=self._name)
         else:
-            raise DaqError(
-                'Write failed, because there are no output channels in this '
-                'task to which data can be written.',
-                DAQmxErrors.WRITE_NO_OUTPUT_CHANS_IN_TASK.value,
-                task_name=self._name)
+            channels_to_write = self.channels
+            number_of_channels = len(channels_to_write.channel_names)
+            write_chan_type = channels_to_write.chan_type
