@@ -29,7 +29,6 @@ def test_device_creation():
             print("Testing device return:\t" + str(device.name))
 
 def test_digital_task_creation():
-    print("Line grouping",LineGrouping.CHAN_FOR_ALL_LINES.value)
     task = Task("Digital Task", debug_mode=True)
     digital_device_name = "cDAQ1Mod1"
     channel_name="channel"
@@ -40,6 +39,13 @@ def test_digital_task_creation():
                 line_grouping=LineGrouping.CHAN_FOR_ALL_LINES)
     print("Channels:\t" + str(task.do_channels))
     print("Channels:\t" + str(task.channels))
+    
+def test_duty_cycle():
+    task = Task("Digital Task", debug_mode=True)
+    print("Task name", task.name)
+    task.duty_cycle = 0.1
+    while not task.is_task_done():
+        print("Is task done?:\t" + str(task.is_task_done()))
     print("Is task done?:\t" + str(task.is_task_done()))
 
 def test_analog_task_creation():
@@ -53,9 +59,11 @@ def test_analog_task_creation():
     #             line_grouping=LineGrouping.CHAN_FOR_ALL_LINES)
 
 if __name__ == "__main__":
-    # print(sys.path)
+    # print(sys.path)Do
     # test_device_creation()
     print("\n")
     test_digital_task_creation()
+    print("\n")
+    test_duty_cycle()
     # print("\n")
     # test_analog_task_creation()

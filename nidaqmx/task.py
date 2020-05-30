@@ -142,6 +142,14 @@ class Task(object):
     def __repr__(self):
         return 'Task(name={0})'.format(self._name)
 
+    @property
+    def duty_cycle(self):
+        return self._duty_cycle
+
+    @duty_cycle.setter
+    def duty_cycle(self, x):
+        print("Attempt to set duty cycle")
+        self._duty_cycle = x
 
     @property
     def name(self):
@@ -582,7 +590,7 @@ class Task(object):
         else:
             # TODO: Add additional safe-checks to verify a user instantiated a task object correctly.
             if (len(self.channels)>0):
-                time.sleep(0.1) # Stall execution for 10ms to reflect valve state switching.
+                time.sleep(self.duty_cycle) # Stall execution for 10ms to reflect valve state switching.
                 return True
             else:
                 return False
