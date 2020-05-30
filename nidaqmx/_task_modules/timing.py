@@ -17,10 +17,21 @@ from nidaqmx.constants import (
 
 
 class Timing(object):
+
+
+    @property
+    def debug_mode(self):
+        return self.__debug_mode
+
+    @debug_mode.setter
+    def debug_mode(self, x):
+        self.__debug_mode=x
+
     """
     Represents the timing configurations for a DAQmx task.
     """
-    def __init__(self, task_handle):
+    def __init__(self, task_handle, debug_mode = False):
+        self.debug_mode = debug_mode
         self._handle = task_handle
 
     @property
@@ -2992,17 +3003,27 @@ class Timing(object):
                 this value to determine the buffer size. This function
                 returns an error if the specified value is negative.
         """
-        cfunc = lib_importer.windll.DAQmxCfgSampClkTiming
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle, ctypes_byte_str,
-                        ctypes.c_double, ctypes.c_int, ctypes.c_int,
-                        ctypes.c_ulonglong]
+        if not self.debug_mode:
+            cfunc = lib_importer.windll.DAQmxCfgSampClkTiming
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle, ctypes_byte_str,
+                            ctypes.c_double, ctypes.c_int, ctypes.c_int,
+                            ctypes.c_ulonglong]
 
-        error_code = cfunc(
-            self._handle, source, rate, active_edge.value, sample_mode.value,
-            samps_per_chan)
-        check_for_error(error_code)
+            error_code = cfunc(
+                self._handle, source, rate, active_edge.value, sample_mode.value,
+                samps_per_chan)
+            check_for_error(error_code)
+        else:
+            if not rate:
+                print("User did not specify sampling rate.")
+                return -1
+            else:
+                # TODO: Determine optimal means of simulating sample clock behaviour 
+                # Perhaps using a separate thread that executes a list of samples per sampling_rate
+                # print("timing - Clock rate configures successfully.")
+                return 0    
 

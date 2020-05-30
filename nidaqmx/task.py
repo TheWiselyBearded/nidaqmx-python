@@ -439,7 +439,7 @@ class Task(object):
         #     self.do_channels.debug_mode = self.debug_mode
         self._export_signals = ExportSignals(task_handle)
         self._in_stream = InStream(self)
-        self._timing = Timing(task_handle)
+        self._timing = Timing(task_handle, self.debug_mode)
         self._triggers = Triggers(task_handle)
         self._out_stream = OutStream(self)
 

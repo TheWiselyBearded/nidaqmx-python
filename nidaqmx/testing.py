@@ -49,6 +49,21 @@ def test_duty_cycle():
     print("Is task done?:\t" + str(task.is_task_done()))
     task.stop()
 
+def test_sampling_clock_configuration():
+    task = Task("Digital Task", debug_mode=True)
+    print("Task name", task.name)
+    repeats = 1
+    samples_per_frame = 50
+    frames_per_s = 2
+    samples_per_s = samples_per_frame * frames_per_s
+    if (task.timing.cfg_samp_clk_timing(\
+            samples_per_s,
+            sample_mode=AcquisitionType.CONTINUOUS,
+            samps_per_chan=samples_per_frame*repeats) == 0):
+        print("Configured clock successfully")
+    else:
+        print("Clock not configured successfully")
+
 def test_analog_task_creation():
     task = Task("Analog Task", debug_mode=True)
     print("Task name", task.name)
@@ -62,7 +77,6 @@ def test_analog_task_creation():
         task.ao_channels.add_ao_voltage_chan(ao)
 
 if __name__ == "__main__":
-    # print(sys.path)Do
     # test_device_creation()
     print("\n")
     test_digital_task_creation()
@@ -70,3 +84,5 @@ if __name__ == "__main__":
     test_duty_cycle()
     print("\n")
     test_analog_task_creation()
+    print("\n")
+    test_sampling_clock_configuration()
