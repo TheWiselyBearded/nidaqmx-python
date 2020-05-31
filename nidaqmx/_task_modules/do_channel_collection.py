@@ -12,7 +12,7 @@ from nidaqmx._task_modules.channels.do_channel import DOChannel
 from nidaqmx._task_modules.channel_collection import ChannelCollection
 from nidaqmx.utils import unflatten_channel_string
 from nidaqmx.constants import (
-    LineGrouping)
+    LineGrouping, ChannelType)
 
 
 class DOChannelCollection(ChannelCollection):
@@ -25,16 +25,25 @@ class DOChannelCollection(ChannelCollection):
     def debug_mode(self, x):
         self.__debug_mode=x
 
+    @property
+    def channel_type(self):
+        return self.__channel_type
+
+    @channel_type.setter
+    def channel_type(self, x):
+        self.__channel_type = x
+
     """
     Contains the collection of digital output channels for a DAQmx Task.
     """
-    def __init__(self, task_handle, debug_mode=False):
+    def __init__(self, task_handle, debug_mode=False, chann_type = False):
         self.debug_mode = debug_mode
         if not debug_mode:
             super(DOChannelCollection, self).__init__(task_handle)
         else:
             super(DOChannelCollection, self).__init__(0, self.debug_mode)
-            # print("Digital Out in Debug Mode")
+            self.channel_type = chann_type
+            # print("Digital Out Collection chann type:\t" + str(self.channel_type))
 
 
     def _create_chan(self, lines, line_grouping, name_to_assign_to_lines=''):
@@ -77,7 +86,7 @@ class DOChannelCollection(ChannelCollection):
         else:
             # print("do_chann_coll - Assigned name to channel lines")
             name = name_to_assign_to_lines
-            return DOChannel(self._handle, name, self.debug_mode)
+            return DOChannel(self._handle, name, self.debug_mode, ChannelType.DIGITAL_OUTPUT)
 
     def add_do_chan(
             self, lines, name_to_assign_to_lines="",
@@ -129,7 +138,7 @@ class DOChannelCollection(ChannelCollection):
                 print('DaqWarning caught: User did not define communication lines')
                 return -1
             else:
-                print("do_channel_collection - Successfully added DO channel.")
+                # print("do_channel_collection - Successfully added DO channel.")
                 return self._create_chan(lines, line_grouping, name_to_assign_to_lines)
                 # return 0    # Success message
 

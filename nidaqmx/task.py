@@ -106,6 +106,7 @@ class Task(object):
             else:
                 self._name = new_task_name
             self._handle = ctypes.c_uint
+            Channel.debug_mode = self.debug_mode
             print("Handle", self._handle)
             self._initialize(self._handle)
             error_code = 0
@@ -161,7 +162,7 @@ class Task(object):
 
     def add_task_channel(self, channel):
         self.task_channels.append(channel)
-        print("Added task channel:\t" + str(channel))
+        # print("Added task channel:\t" + str(channel))
 
     @property
     def name(self):
@@ -215,15 +216,20 @@ class Task(object):
                 self._handle, flatten_channel_string(self.channel_names))
         else:
             channels = ""
-            for channel in self.channel_names:
-                channels += str(channel)
-                channels += ","
-            print(channels)
-            print("\ntask.channels - channel factory entry")
-            Channel._factory(
-                self._handle, channels, self.debug_mode)
-            # return flatten_channel_string(self.channel_names)
-            return channels
+            if (len(self.channel_names) > 1):
+                for channel in self.channel_names:
+                    channels += str(channel)
+                    channels += ","
+            else:
+                channels = str(self.channel_names[0])
+            # print("\ntask.channels - channel factory entry")
+            # print(channels)
+            # TODO: Determine channel mode by iterating over each channel collection
+            # and checking length of channel instances.
+            Channel.channel_type = self.do_channels.channel_type
+            return Channel._factory(
+                self._handle, channels, self.debug_mode, self.do_channels.channel_type)
+            # return channels
 
     @property
     def channel_names(self):
@@ -259,11 +265,14 @@ class Task(object):
 
             return unflatten_channel_string(val.value.decode('ascii'))
         else:
+            # print("task.channel_names - about to print tasks added manually")
             channels = []
-            if (self.do_channels):
-                channels.append(self.do_channels)
-            if (self.ao_channels):
-                channels.append(self.ao_channels)
+            for tsk in self.task_channels:
+                channels.append(tsk)
+            # if (self.do_channels):
+            #     channels.append(self.do_channels)
+            # if (self.ao_channels):
+            #     channels.append(self.ao_channels)
             return channels
             # return ["Channel1","Channel2"]
 
@@ -453,7 +462,7 @@ class Task(object):
         self._ci_channels = CIChannelCollection(task_handle)
         self._co_channels = COChannelCollection(task_handle)
         self._di_channels = DIChannelCollection(task_handle)
-        self._do_channels = DOChannelCollection(task_handle, self.debug_mode)
+        self._do_channels = DOChannelCollection(task_handle, self.debug_mode, ChannelType.DIGITAL_OUTPUT)
         # if (self.debug_mode):
         #     self.do_channels.debug_mode = self.debug_mode
         self._export_signals = ExportSignals(task_handle)
@@ -1428,4 +1437,29 @@ class Task(object):
         else:
             channels_to_write = self.channels
             number_of_channels = len(channels_to_write.channel_names)
-            write_chan_type = channels_to_write.chan_type
+            write_chan_type = channels_to_write.channel_type
+            print("task.write.write_chan_type:\t" + str(write_chan_type))
+            element = None
+            number_of_samples_per_channel = len(data)
+            element = data[0]
+            if auto_start is AUTO_START_UNSET:
+                if number_of_samples_per_channel > 1:
+                    auto_start = False
+                else:
+                    auto_start = True
+            if write_chan_type == ChannelType.DIGITAL_OUTPUT:
+                print("Attempt to write digital output")
+                # if self.out_stream.do_num_booleans_per_chan == 1:
+                #     if (not isinstance(element, bool) and
+                #             not isinstance(element, numpy.bool_)):
+                #         raise DaqError(
+                #             'Write failed, because this write method only accepts '
+                #             'boolean samples when there is one digital line per '
+                #             'channel in a task.\n\n'
+                #             'Requested sample type: {0}'.format(type(element)),
+                #             DAQmxErrors.UNKNOWN.value, task_name=self._name)
+
+                #     data = numpy.asarray(data, dtype=numpy.bool)
+                #     return _write_digital_lines(
+                #         self._handle, data, number_of_samples_per_channel,
+                #         auto_start, timeout)

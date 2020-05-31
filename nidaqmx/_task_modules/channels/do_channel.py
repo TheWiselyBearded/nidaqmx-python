@@ -30,7 +30,8 @@ class DOChannel(Channel):
         self.__debug_mode = x
 
     def __repr__(self, debug_mode=False):
-        self.debug_mode = debug_mode
+        # self.debug_mode = debug_mode
+        # print("DO Channel - debug mode:\t" + str(self.debug_mode))
         return 'DOChannel(name={0})'.format(self._name)
 
     @property

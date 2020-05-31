@@ -20,7 +20,7 @@ class Channel(object):
     """
     Represents virtual channel or a list of virtual channels.
     """
-    __slots__ = ['_handle', '_name', '__weakref__', '__debug_mode']
+    __slots__ = ['_handle', '_name', '__weakref__', '__debug_mode', '__channel_type']
 
     @property
     def debug_mode(self):
@@ -30,7 +30,15 @@ class Channel(object):
     def debug_mode(self, x):
         self.__debug_mode = x
 
-    def __init__(self, task_handle, virtual_or_physical_name, debug_mode =False):
+    @property
+    def channel_type(self):
+        return self.__channel_type
+
+    @channel_type.setter
+    def channel_type(self, x):
+        self.__channel_type = x
+
+    def __init__(self, task_handle, virtual_or_physical_name, debug_mode =False, chann_type = False):
         """
         Args:
             task_handle (TaskHandle): Specifies the handle of the task that
@@ -41,8 +49,9 @@ class Channel(object):
         self._handle = task_handle
         self._name = virtual_or_physical_name
         self.debug_mode = debug_mode
-        # if (self.debug_mode):
-        #     print("Channel initialized in debug mode with name:\t" + self.name)
+        if (self.debug_mode):
+            self.channel_type = chann_type
+            print("Channel - initialized in debug mode with name:\t" + self.name)
 
     def __add__(self, other):
         if not isinstance(other, self.__class__):
@@ -100,7 +109,7 @@ class Channel(object):
         return 'Channel(name={0})'.format(self.name)
 
     @staticmethod
-    def _factory(task_handle, virtual_or_physical_name, debug_mode = False):
+    def _factory(task_handle, virtual_or_physical_name, debug_mode = False, chann_type=False):
         """
         Implements the factory pattern for nidaqmx channels.
 
@@ -150,10 +159,13 @@ class Channel(object):
                 return nidaqmx._task_modules.channels.DOChannel(
                     task_handle, virtual_or_physical_name)
         else:
-            print("channel - Debug Mode specifying channel type")
-            print("Channels parameter:\t" + virtual_or_physical_name)
-            channel_type = ChannelType.DIGITAL_OUTPUT
-            channel_type = ChannelType.ANALOG_OUTPUT
+            # print("channel - Debug Mode specifying channel type")
+            # print("Channels parameter:\t" + virtual_or_physical_name)
+            if (chann_type == ChannelType.DIGITAL_OUTPUT):
+                # print("Channel - channel type:\t" + str(chann_type))
+                return nidaqmx._task_modules.channels.DOChannel(
+                    task_handle, virtual_or_physical_name)
+                
 
     @property
     def name(self):

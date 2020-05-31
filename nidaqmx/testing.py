@@ -80,14 +80,15 @@ def test_digital_write_task():
     task = Task("Digital Task", debug_mode=True)
     digital_device_name = "cDAQ1Mod1"
     channel_name="channel"
-    print("Task name", task.name)
+    # print("Task name", task.name)
     NIDAQMXChannel =task.do_channels.add_do_chan(
                 digital_device_name + "/port0",
                 name_to_assign_to_lines=channel_name,
                 line_grouping=LineGrouping.CHAN_FOR_ALL_LINES)
     task.add_task_channel(NIDAQMXChannel)
-    print("Channels:\t" + str(task.task_channels))
-    # print("Channels:\t" + str(task.channels))
+    # print("Channels:\t" + str(task.task_channels))
+    print("Channels:\t" + str(task.channels))
+    task.write([True,False,True], True)
     
 
 if __name__ == "__main__":
