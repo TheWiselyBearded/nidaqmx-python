@@ -162,7 +162,7 @@ class Task(object):
 
     def add_task_channel(self, channel):
         self.task_channels.append(channel)
-        # print("Added task channel:\t" + str(channel))
+        # print("Added task channel:\t" + str(channel) + "\n")
 
     @property
     def name(self):
@@ -224,11 +224,16 @@ class Task(object):
                 channels = str(self.channel_names[0])
             # print("\ntask.channels - channel factory entry")
             # print(channels)
-            # TODO: Determine channel mode by iterating over each channel collection
-            # and checking length of channel instances.
-            Channel.channel_type = self.do_channels.channel_type
-            return Channel._factory(
-                self._handle, channels, self.debug_mode, self.do_channels.channel_type)
+            # TODO: Allow for both channels to be specified in same task session.
+            if (self.do_channels.num_channels > 0):
+                Channel.channel_type = self.do_channels.channel_type
+                return Channel._factory(
+                    self._handle, channels, self.debug_mode, self.do_channels.channel_type)
+            elif (self.ao_channels.num_channels > 0):
+                Channel.channel_type = self.ao_channels.channel_type
+                print("ANANLOG:\t" + str(Channel.channel_type))
+                return Channel._factory(
+                    self._handle, channels, self.debug_mode, self.ao_channels.channel_type)
             # return channels
 
     @property
@@ -268,6 +273,7 @@ class Task(object):
             # print("task.channel_names - about to print tasks added manually")
             channels = []
             for tsk in self.task_channels:
+                # print("Task Chann:\t" + str(tsk))
                 channels.append(tsk)
             # if (self.do_channels):
             #     channels.append(self.do_channels)
@@ -458,7 +464,7 @@ class Task(object):
         self._saved_name = self._name
 
         self._ai_channels = AIChannelCollection(task_handle)
-        self._ao_channels = AOChannelCollection(task_handle, self.debug_mode)
+        self._ao_channels = AOChannelCollection(task_handle, self.debug_mode, ChannelType.ANALOG_OUTPUT)
         self._ci_channels = CIChannelCollection(task_handle)
         self._co_channels = COChannelCollection(task_handle)
         self._di_channels = DIChannelCollection(task_handle)
@@ -469,7 +475,7 @@ class Task(object):
         self._in_stream = InStream(self)
         self._timing = Timing(task_handle, self.debug_mode)
         self._triggers = Triggers(task_handle)
-        self._out_stream = OutStream(self)
+        self._out_stream = OutStream(self, self.debug_mode)
 
         # These lists keep C callback objects in memory as ctypes doesn't.
         # Program will crash if callback is made after object is garbage
@@ -1448,18 +1454,43 @@ class Task(object):
                 else:
                     auto_start = True
             if write_chan_type == ChannelType.DIGITAL_OUTPUT:
-                print("Attempt to write digital output")
-                # if self.out_stream.do_num_booleans_per_chan == 1:
-                #     if (not isinstance(element, bool) and
-                #             not isinstance(element, numpy.bool_)):
-                #         raise DaqError(
-                #             'Write failed, because this write method only accepts '
-                #             'boolean samples when there is one digital line per '
-                #             'channel in a task.\n\n'
-                #             'Requested sample type: {0}'.format(type(element)),
-                #             DAQmxErrors.UNKNOWN.value, task_name=self._name)
+                # print("Attempt to write digital output")
+                # print(self.out_stream)
+                if self.out_stream.do_num_booleans_per_chan == 1:
+                    if (not isinstance(element, bool) and
+                            not isinstance(element, numpy.bool_)):
+                        raise DaqError(
+                            'Write failed, because this write method only accepts '
+                            'boolean samples when there is one digital line per '
+                            'channel in a task.\n\n'
+                            'Requested sample type: {0}'.format(type(element)),
+                            DAQmxErrors.UNKNOWN.value, task_name=self._name)
+                    data = numpy.asarray(data, dtype=numpy.bool)
+                    print("write_digital_lines")
+                    # return _write_digital_lines(
+                        # self._handle, data, number_of_samples_per_channel,
+                        # auto_start, timeout)
+                else:
+                    if (not isinstance(element, six.integer_types) and
+                            not isinstance(element, numpy.uint32)):
+                        raise DaqError(
+                            'Write failed, because this write method only accepts '
+                            'unsigned 32-bit integer samples when there are '
+                            'multiple digital lines per channel in a task.\n\n'
+                            'Requested sample type: {0}'.format(type(element)),
+                            DAQmxErrors.UNKNOWN.value, task_name=self._name)
 
-                #     data = numpy.asarray(data, dtype=numpy.bool)
-                #     return _write_digital_lines(
+                    data = numpy.asarray(data, dtype=numpy.uint32)
+                    print("write_digital_u_32")
+                    print(data)
+                #     return _write_digital_u_32(
                 #         self._handle, data, number_of_samples_per_channel,
                 #         auto_start, timeout)
+            # Analog Input
+            if write_chan_type == ChannelType.ANALOG_OUTPUT:
+                data = numpy.asarray(data, dtype=numpy.float64)
+                print("_write_analog_f_64")
+                print(data)
+                # return _write_analog_f_64(
+                #     self._handle, data, number_of_samples_per_channel, auto_start,
+                #     timeout)

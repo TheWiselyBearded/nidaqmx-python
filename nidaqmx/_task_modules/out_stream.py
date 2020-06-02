@@ -22,12 +22,13 @@ class OutStream(object):
     used in conjunction with writer classes to write samples to an
     NI-DAQmx task.
     """
-    def __init__(self, task):
+    def __init__(self, task, debug_mode=False):
         self._task = task
         self._handle = task._handle
         self._auto_start = False
         self._timeout = 10.0
-
+        self.debug_mode = debug_mode
+        # print("OUTSTREAM calls stream_writers")
         super(OutStream, self).__init__()
 
     def __eq__(self, other):
@@ -45,6 +46,15 @@ class OutStream(object):
 
     def __repr__(self):
         return 'OutStream(task={0})'.format(self._task.name)
+
+
+    @property
+    def debug_mode(self):
+        return self.__debug_mode
+
+    @debug_mode.setter
+    def debug_mode(self, x):
+        self.__debug_mode=x
 
     @property
     def auto_start(self):
@@ -185,21 +195,27 @@ class OutStream(object):
             lines. If a channel has fewer lines than this number, NI-
             DAQmx ignores the extra Boolean values.
         """
-        val = ctypes.c_uint()
+        if not self.debug_mode:
+            val = ctypes.c_uint()
 
-        cfunc = lib_importer.windll.DAQmxGetWriteDigitalLinesBytesPerChan
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle,
-                        ctypes.POINTER(ctypes.c_uint)]
+            cfunc = lib_importer.windll.DAQmxGetWriteDigitalLinesBytesPerChan
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle,
+                            ctypes.POINTER(ctypes.c_uint)]
 
-        error_code = cfunc(
-            self._handle, ctypes.byref(val))
-        check_for_error(error_code)
+            error_code = cfunc(
+                self._handle, ctypes.byref(val))
+            check_for_error(error_code)
 
-        return val.value
+            return val.value
+        else:
+            # NOTE: We have 2^16 lines of communication for our olfactometer setup.
+            # TODO: Following up on this would be best.
+            return 500
+
 
     @property
     def external_overvoltage_chans(self):

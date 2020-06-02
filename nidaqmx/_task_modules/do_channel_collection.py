@@ -33,6 +33,14 @@ class DOChannelCollection(ChannelCollection):
     def channel_type(self, x):
         self.__channel_type = x
 
+    @property
+    def num_channels(self):
+        return self.__num_channels
+
+    @num_channels.setter
+    def num_channels(self, x):
+        self.__num_channels=x
+
     """
     Contains the collection of digital output channels for a DAQmx Task.
     """
@@ -43,6 +51,7 @@ class DOChannelCollection(ChannelCollection):
         else:
             super(DOChannelCollection, self).__init__(0, self.debug_mode)
             self.channel_type = chann_type
+            self.num_channels = 0
             # print("Digital Out Collection chann type:\t" + str(self.channel_type))
 
 
@@ -86,6 +95,7 @@ class DOChannelCollection(ChannelCollection):
         else:
             # print("do_chann_coll - Assigned name to channel lines")
             name = name_to_assign_to_lines
+            self.num_channels = self.num_channels + 1
             return DOChannel(self._handle, name, self.debug_mode, ChannelType.DIGITAL_OUTPUT)
 
     def add_do_chan(

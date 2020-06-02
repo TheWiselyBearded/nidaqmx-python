@@ -51,7 +51,7 @@ class Channel(object):
         self.debug_mode = debug_mode
         if (self.debug_mode):
             self.channel_type = chann_type
-            print("Channel - initialized in debug mode with name:\t" + self.name)
+            # print("Channel - initialized in debug mode with name:\t" + self.name)
 
     def __add__(self, other):
         if not isinstance(other, self.__class__):
@@ -164,6 +164,10 @@ class Channel(object):
             if (chann_type == ChannelType.DIGITAL_OUTPUT):
                 # print("Channel - channel type:\t" + str(chann_type))
                 return nidaqmx._task_modules.channels.DOChannel(
+                    task_handle, virtual_or_physical_name)
+            if (chann_type == ChannelType.ANALOG_OUTPUT):
+                # print("Channel - channel type:\t" + str(chann_type))
+                return nidaqmx._task_modules.channels.AOChannel(
                     task_handle, virtual_or_physical_name)
                 
 

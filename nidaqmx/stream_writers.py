@@ -48,6 +48,7 @@ class ChannelWriterBase(object):
                 value is True; conversely, if you use a many sample 
                 write method, the value is False.
         """
+        print("Out stream calls ChannelWriter Base")
         self._out_stream = task_out_stream
         self._task = task_out_stream._task
         self._handle = task_out_stream._task._handle
