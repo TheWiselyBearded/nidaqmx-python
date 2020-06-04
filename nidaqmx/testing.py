@@ -85,6 +85,7 @@ def test_digital_write_task():
     # print("Channels:\t" + str(task.task_channels))
     print("Channels:\t" + str(task.channels))
     task.write([True,False,True], True)
+    task.write([True,True,True], True)
     task.close()
 
 def test_analog_task_creation():

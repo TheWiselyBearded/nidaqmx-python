@@ -14,9 +14,9 @@ from os import path
 # import nidaqmx
 # print(sys.path)
 import nidaqmx
-from constants import (
+from nidaqmx.constants import (
 LineGrouping, AcquisitionType)
-from task import Task 
+from nidaqmx.task import Task 
 
 '''
 TODO:
