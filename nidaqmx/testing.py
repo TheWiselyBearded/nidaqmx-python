@@ -85,6 +85,7 @@ def test_digital_write_task():
     # print("Channels:\t" + str(task.task_channels))
     print("Channels:\t" + str(task.channels))
     task.write([True,False,True], True)
+    task.close()
 
 def test_analog_task_creation():
     task = Task("Analog Task", debug_mode=True)
@@ -165,7 +166,7 @@ if __name__ == "__main__":
     # test_analog_task_creation()
     # print("\nTest Sample Clock")
     # test_sampling_clock_configuration()
-    # print("\nTest Digital Write")
-    # test_digital_write_task()
+    print("\nTest Digital Write")
+    test_digital_write_task()
     print("\nTest Analog Write")
     test_analog_write_task()

@@ -30,13 +30,25 @@ class Channel(object):
     def debug_mode(self, x):
         self.__debug_mode = x
 
+    @staticmethod
+    def validate_channel_type(x):
+        if x is not None:
+            return x
+        else:
+            raise ValueError(':(')
+
     @property
     def channel_type(self):
         return self.__channel_type
 
     @channel_type.setter
     def channel_type(self, x):
-        self.__channel_type = x
+        self.__channel_type = self.validate_channel_type(x) #x if x else 'Not Found'
+
+    
+    @channel_type.deleter
+    def a(self):
+        self.__channel_type = 0
 
     def __init__(self, task_handle, virtual_or_physical_name, debug_mode =False, chann_type = False):
         """
@@ -49,9 +61,10 @@ class Channel(object):
         self._handle = task_handle
         self._name = virtual_or_physical_name
         self.debug_mode = debug_mode
+        print("channel - Passed CHAN TYPE:\t" + str(chann_type))
         if (self.debug_mode):
-            self.channel_type = chann_type
-            # print("Channel - initialized in debug mode with name:\t" + self.name)
+            print("Channel - initialized in debug mode with name:\t" + self.name)
+            self.__channel_type = self.validate_channel_type(chann_type)
 
     def __add__(self, other):
         if not isinstance(other, self.__class__):
@@ -106,7 +119,10 @@ class Channel(object):
             yield Channel._factory(self._handle, channel_name)
 
     def __repr__(self):
-        return 'Channel(name={0})'.format(self.name)
+        if (self.debug_mode):
+            return 'Channel(name={0})'.format(self.name) + ',ChannelType(type={0}'.format(self.channel_type)
+        else:
+            return 'Channel(name={0})'.format(self.name) 
 
     @staticmethod
     def _factory(task_handle, virtual_or_physical_name, debug_mode = False, chann_type=False):
