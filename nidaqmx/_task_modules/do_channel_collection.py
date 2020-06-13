@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 
 import ctypes
 import numpy
+from datetime import datetime
 
 from nidaqmx._lib import lib_importer, ctypes_byte_str
 from nidaqmx.errors import check_for_error
@@ -145,10 +146,11 @@ class DOChannelCollection(ChannelCollection):
             return self._create_chan(lines, line_grouping, name_to_assign_to_lines)
         else:
             if not lines or not name_to_assign_to_lines:
-                print('DaqWarning caught: User did not define communication lines')
+                print('do_channel_collection.add_do_chan() - DaqWarning caught: User did not define communication lines' + "\n" + \
+                    str(datetime.now()))
                 return -1
             else:
-                # print("do_channel_collection - Successfully added DO channel.")
+                print("do_channel_collection - Successfully added DO channel.")
                 return self._create_chan(lines, line_grouping, name_to_assign_to_lines)
                 # return 0    # Success message
 

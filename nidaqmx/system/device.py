@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 
 import ctypes
 import numpy
+from datetime import datetime
 
 from nidaqmx._lib import (
     lib_importer, wrapped_ndpointer, enum_bitfield_to_list, ctypes_byte_str,
@@ -38,7 +39,8 @@ class Device(object):
         self._name = name
         self.debug_mode = debug_mode
         if (self.debug_mode):
-            print("Device initialized with name:\t" + self.name)
+            dateTimeObj = datetime.now()            	
+            print("device.init - Device initialized with name:\t" + self.name + "\n" + str(dateTimeObj))
             # print("Device - Debug_mode parameter passed:\t" + str(debug_mode))
 
     def __eq__(self, other):

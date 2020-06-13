@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import collections
 import ctypes
 import numpy
+from datetime import datetime
 
 from nidaqmx._lib import (
     lib_importer, wrapped_ndpointer, ctypes_byte_str, c_bool32)
@@ -47,7 +48,10 @@ class System(object):
     def __init__(self, debug_mode=False):
         self.debug_mode = debug_mode
         if self.debug_mode:
-            print("local debug_mode status of system:\t" + str(debug_mode))
+            # current date and time
+            dateTimeObj = datetime.now()
+            print("system.init:\t" + str(dateTimeObj) + \
+                "\nlocal debug_mode status of system:\t" + str(debug_mode))
 
     @property
     def debug_mode(self):
@@ -109,7 +113,11 @@ class System(object):
         nidaqmx.system._collections.PersistedTaskCollection: Indicates
             the collection of saved tasks for this DAQmx system.
         """
-        return PersistedTaskCollection(self.debug_mode)
+        # print("system.tasks debug mode:\t" + str(self.debug_mode))
+        if (self.debug_mode):
+            print("No persisted task collection can be loaded in debug mode.")
+            return 0
+        return PersistedTaskCollection()
 
     @property
     def _major_version(self):

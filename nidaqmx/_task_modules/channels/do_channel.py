@@ -499,21 +499,25 @@ class DOChannel(Channel):
         """
         int: Indicates the number of digital lines in the channel.
         """
-        val = ctypes.c_uint()
+        if not self.debug_mode:
+            val = ctypes.c_uint()
 
-        cfunc = lib_importer.windll.DAQmxGetDONumLines
-        if cfunc.argtypes is None:
-            with cfunc.arglock:
-                if cfunc.argtypes is None:
-                    cfunc.argtypes = [
-                        lib_importer.task_handle, ctypes_byte_str,
-                        ctypes.POINTER(ctypes.c_uint)]
+            cfunc = lib_importer.windll.DAQmxGetDONumLines
+            if cfunc.argtypes is None:
+                with cfunc.arglock:
+                    if cfunc.argtypes is None:
+                        cfunc.argtypes = [
+                            lib_importer.task_handle, ctypes_byte_str,
+                            ctypes.POINTER(ctypes.c_uint)]
 
-        error_code = cfunc(
-            self._handle, self._name, ctypes.byref(val))
-        check_for_error(error_code)
+            error_code = cfunc(
+                self._handle, self._name, ctypes.byref(val))
+            check_for_error(error_code)
 
-        return val.value
+            return val.value
+        else:
+            print("do_channel returning 1 for debugging.")
+            return 1
 
     @property
     def do_output_drive_type(self):

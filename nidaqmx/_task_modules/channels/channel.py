@@ -61,8 +61,9 @@ class Channel(object):
         self._handle = task_handle
         self._name = virtual_or_physical_name
         self.debug_mode = debug_mode
-        print("channel - Passed CHAN TYPE:\t" + str(chann_type))
-        if (self.debug_mode):
+        if (chann_type):
+            print("channel - Passed CHAN TYPE:\t" + str(chann_type))
+        if (self.debug_mode and chann_type):
             print("Channel - initialized in debug mode with name:\t" + self.name)
             self.__channel_type = self.validate_channel_type(chann_type)
 
