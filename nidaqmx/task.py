@@ -1487,16 +1487,14 @@ class Task(object):
                                 DAQmxErrors.UNKNOWN.value, task_name=self._name)
 
                         data = numpy.asarray(data, dtype=numpy.uint32)
-                        print("write_digital_u_32")
-                        print(data)
+                        print("DIGITAL DATA received & written:\n", data)
                     #     return _write_digital_u_32(
                     #         self._handle, data, number_of_samples_per_channel,
                     #         auto_start, timeout)
             # Analog Input
             if write_chan_type == ChannelType.ANALOG_OUTPUT:
                 data = numpy.asarray(data, dtype=numpy.float64)
-                print("_write_analog_f_64")
-                print(data)
+                print("ANALOG DATA received & written:\n", data)
                 # return _write_analog_f_64(
                 #     self._handle, data, number_of_samples_per_channel, auto_start,
                 #     timeout)
