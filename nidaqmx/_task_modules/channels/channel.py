@@ -64,7 +64,7 @@ class Channel(object):
         if (chann_type):
             print("channel - Passed CHAN TYPE:\t" + str(chann_type))
         if (self.debug_mode and chann_type):
-            print("Channel - initialized in debug mode with name:\t" + self.name)
+            # print("Channel - initialized in debug mode with name:\t" + self.name)
             self.__channel_type = self.validate_channel_type(chann_type)
 
     def __add__(self, other):

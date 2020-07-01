@@ -80,7 +80,7 @@ class AOChannelCollection(ChannelCollection):
 
             return AOChannel(self._handle, name)
         else:
-            # print("ao_chann_coll - Assigned name to channel lines")
+            print("ao_chann_coll - Assigned name to channel lines:\t",name_to_assign_to_channel)
             self.num_channels = self.num_channels + 1
             name = name_to_assign_to_channel
             return AOChannel(self._handle, name, self.debug_mode, ChannelType.ANALOG_OUTPUT)
@@ -235,5 +235,6 @@ class AOChannelCollection(ChannelCollection):
                 return -1
             else:
                 # print("ao_channel_collection :\t" + physical_channel)
+                # print("ao_channel_collection name:\t" + name_to_assign_to_channel)
                 return self._create_chan(physical_channel, name_to_assign_to_channel)
 
