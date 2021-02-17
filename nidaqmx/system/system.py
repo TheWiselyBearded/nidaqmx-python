@@ -39,11 +39,11 @@ class System(object):
     information about the hardware.
     """
     @staticmethod
-    def local(debug_mode):
+    def local():
         """
         nidaqmx.system.system.System: Represents the local DAQmx system.
         """
-        return System(debug_mode)
+        return System()
 
     def __init__(self, debug_mode=False):
         self.debug_mode = debug_mode

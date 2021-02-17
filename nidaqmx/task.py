@@ -86,6 +86,12 @@ class Task(object):
         self.debug_mode = debug_mode
         self.task_channels = []
         if not self.debug_mode:
+            if not (len(new_task_name)  > 0):
+                new_task_name = "Task"
+                self._name = new_task_name
+            else:
+                self._name = new_task_name
+            print("Handle task.init")
             self._handle = lib_importer.task_handle(0)
             cfunc = lib_importer.windll.DAQmxCreateTask
             if cfunc.argtypes is None:
@@ -1290,6 +1296,7 @@ class Task(object):
             successfully wrote.
         """
         if not self.debug_mode:
+            print("task.write() ABOUT TO WRITE")
             channels_to_write = self.channels
             number_of_channels = len(channels_to_write.channel_names)
             write_chan_type = channels_to_write.chan_type

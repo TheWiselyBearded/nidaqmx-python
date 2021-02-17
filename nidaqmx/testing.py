@@ -169,5 +169,5 @@ if __name__ == "__main__":
     # test_sampling_clock_configuration()
     print("\nTest Digital Write")
     test_digital_write_task()
-    print("\nTest Analog Write")
-    test_analog_write_task()
+    # print("\nTest Analog Write")
+    # test_analog_write_task()
