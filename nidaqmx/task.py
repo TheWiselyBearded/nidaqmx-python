@@ -8,6 +8,7 @@ import numpy
 import six
 import warnings
 import time
+from datetime import datetime
 
 from nidaqmx._lib import lib_importer, ctypes_byte_str, c_bool32
 from nidaqmx._task_modules.channels.channel import Channel
@@ -85,6 +86,12 @@ class Task(object):
         self.debug_mode = debug_mode
         self.task_channels = []
         if not self.debug_mode:
+            if not (len(new_task_name)  > 0):
+                new_task_name = "Task"
+                self._name = new_task_name
+            else:
+                self._name = new_task_name
+            print("Handle task.init")
             self._handle = lib_importer.task_handle(0)
             cfunc = lib_importer.windll.DAQmxCreateTask
             if cfunc.argtypes is None:
@@ -197,6 +204,7 @@ class Task(object):
 
             return val.value.decode('ascii')    # Expects string generated of char bytes array.
         else:
+            print("Task.name in debug mode:\t" + self._name)
             return self._name
 
     @name.setter
@@ -221,10 +229,11 @@ class Task(object):
                     channels += str(channel)
                     channels += ","
             else:
+                # print("task.channels - default 0 index channel obj\n" + \
+                #     str(datetime.now()))
                 channels = str(self.channel_names[0])
-            # print("\ntask.channels - channel factory entry")
-            # print(channels)
-            # TODO: Allow for both channels to be specified in same task session.
+            # print("\ntask.channels - channel factory entry\n" + \
+            #     str(datetime.now()))
             if (self.do_channels.num_channels > 0):
                 Channel.channel_type = self.do_channels.channel_type
                 return Channel._factory(
@@ -1287,6 +1296,7 @@ class Task(object):
             successfully wrote.
         """
         if not self.debug_mode:
+            print("task.write() ABOUT TO WRITE")
             channels_to_write = self.channels
             number_of_channels = len(channels_to_write.channel_names)
             write_chan_type = channels_to_write.chan_type
@@ -1446,51 +1456,52 @@ class Task(object):
             write_chan_type = channels_to_write.channel_type
             print("task.write.write_chan_type:\t" + str(write_chan_type))
             element = None
+            print("Number of data:\t" + str(len(data)))
             number_of_samples_per_channel = len(data)
-            element = data[0]
-            if auto_start is AUTO_START_UNSET:
-                if number_of_samples_per_channel > 1:
-                    auto_start = False
-                else:
-                    auto_start = True
-            if write_chan_type == ChannelType.DIGITAL_OUTPUT:
-                # print("Attempt to write digital output")
-                # print(self.out_stream)
-                if self.out_stream.do_num_booleans_per_chan == 1:
-                    if (not isinstance(element, bool) and
-                            not isinstance(element, numpy.bool_)):
-                        raise DaqError(
-                            'Write failed, because this write method only accepts '
-                            'boolean samples when there is one digital line per '
-                            'channel in a task.\n\n'
-                            'Requested sample type: {0}'.format(type(element)),
-                            DAQmxErrors.UNKNOWN.value, task_name=self._name)
-                    data = numpy.asarray(data, dtype=numpy.bool)
-                    print("write_digital_lines")
-                    # return _write_digital_lines(
-                        # self._handle, data, number_of_samples_per_channel,
-                        # auto_start, timeout)
-                else:
-                    if (not isinstance(element, six.integer_types) and
-                            not isinstance(element, numpy.uint32)):
-                        raise DaqError(
-                            'Write failed, because this write method only accepts '
-                            'unsigned 32-bit integer samples when there are '
-                            'multiple digital lines per channel in a task.\n\n'
-                            'Requested sample type: {0}'.format(type(element)),
-                            DAQmxErrors.UNKNOWN.value, task_name=self._name)
+            if (number_of_samples_per_channel > 0):
+                print("task.write num_samples > 0")
+                element = data[0]
+                if auto_start is AUTO_START_UNSET:
+                    if number_of_samples_per_channel > 1:
+                        auto_start = False
+                    else:
+                        auto_start = True
+                if write_chan_type == ChannelType.DIGITAL_OUTPUT:
+                    print("Attempt to write digital output")
+                    print(self.out_stream)
+                    if self.out_stream.do_num_booleans_per_chan == 1:
+                        if (not isinstance(element, bool) and
+                                not isinstance(element, numpy.bool_)):
+                            raise DaqError(
+                                'Write failed, because this write method only accepts '
+                                'boolean samples when there is one digital line per '
+                                'channel in a task.\n\n'
+                                'Requested sample type: {0}'.format(type(element)),
+                                DAQmxErrors.UNKNOWN.value, task_name=self._name)
+                        data = numpy.asarray(data, dtype=numpy.bool)
+                        print("write_digital_lines")
+                        # return _write_digital_lines(
+                            # self._handle, data, number_of_samples_per_channel,
+                            # auto_start, timeout)
+                    else:
+                        if (not isinstance(element, six.integer_types) and
+                                not isinstance(element, numpy.uint32)):
+                            raise DaqError(
+                                'Write failed, because this write method only accepts '
+                                'unsigned 32-bit integer samples when there are '
+                                'multiple digital lines per channel in a task.\n\n'
+                                'Requested sample type: {0}'.format(type(element)),
+                                DAQmxErrors.UNKNOWN.value, task_name=self._name)
 
-                    data = numpy.asarray(data, dtype=numpy.uint32)
-                    print("write_digital_u_32")
-                    print(data)
-                #     return _write_digital_u_32(
-                #         self._handle, data, number_of_samples_per_channel,
-                #         auto_start, timeout)
+                        data = numpy.asarray(data, dtype=numpy.uint32)
+                        print("DIGITAL DATA received & written:\n", data)
+                    #     return _write_digital_u_32(
+                    #         self._handle, data, number_of_samples_per_channel,
+                    #         auto_start, timeout)
             # Analog Input
             if write_chan_type == ChannelType.ANALOG_OUTPUT:
                 data = numpy.asarray(data, dtype=numpy.float64)
-                print("_write_analog_f_64")
-                print(data)
+                print("ANALOG DATA received & written:\n", data)
                 # return _write_analog_f_64(
                 #     self._handle, data, number_of_samples_per_channel, auto_start,
                 #     timeout)
