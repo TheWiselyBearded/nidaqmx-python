@@ -91,7 +91,7 @@ class Task(object):
                 self._name = new_task_name
             else:
                 self._name = new_task_name
-            print("Handle task.init")
+            # print("Handle task.init")
             self._handle = lib_importer.task_handle(0)
             cfunc = lib_importer.windll.DAQmxCreateTask
             if cfunc.argtypes is None:
@@ -204,12 +204,12 @@ class Task(object):
 
             return val.value.decode('ascii')    # Expects string generated of char bytes array.
         else:
-            print("Task.name in debug mode:\t" + self._name)
+            # print("Task.name in debug mode:\t" + self._name)
             return self._name
 
     @name.setter
     def name(self, x):
-        print("Attempt to set name")
+        # print("Attempt to set name")
         self._name = x
 
     @property
@@ -240,7 +240,7 @@ class Task(object):
                     self._handle, channels, self.debug_mode, self.do_channels.channel_type)
             elif (self.ao_channels.num_channels > 0):
                 Channel.channel_type = self.ao_channels.channel_type
-                print("ANANLOG:\t" + str(Channel.channel_type))
+                # print("ANALOG:\t" + str(Channel.channel_type))
                 return Channel._factory(
                     self._handle, channels, self.debug_mode, self.ao_channels.channel_type)
             # return channels
@@ -1296,7 +1296,7 @@ class Task(object):
             successfully wrote.
         """
         if not self.debug_mode:
-            print("task.write() ABOUT TO WRITE")
+            # print("task.write() ABOUT TO WRITE")
             channels_to_write = self.channels
             number_of_channels = len(channels_to_write.channel_names)
             write_chan_type = channels_to_write.chan_type
@@ -1454,12 +1454,12 @@ class Task(object):
             channels_to_write = self.channels
             number_of_channels = len(channels_to_write.channel_names)
             write_chan_type = channels_to_write.channel_type
-            print("task.write.write_chan_type:\t" + str(write_chan_type))
+            # print("task.write.write_chan_type:\t" + str(write_chan_type))
             element = None
-            print("Number of data:\t" + str(len(data)))
+            # print("Number of data:\t" + str(len(data)))
             number_of_samples_per_channel = len(data)
             if (number_of_samples_per_channel > 0):
-                print("task.write num_samples > 0")
+                # print("task.write num_samples > 0")
                 element = data[0]
                 if auto_start is AUTO_START_UNSET:
                     if number_of_samples_per_channel > 1:
@@ -1467,8 +1467,8 @@ class Task(object):
                     else:
                         auto_start = True
                 if write_chan_type == ChannelType.DIGITAL_OUTPUT:
-                    print("Attempt to write digital output")
-                    print(self.out_stream)
+                    # print("Attempt to write digital output")
+                    # print(self.out_stream)
                     if self.out_stream.do_num_booleans_per_chan == 1:
                         if (not isinstance(element, bool) and
                                 not isinstance(element, numpy.bool_)):
@@ -1479,7 +1479,7 @@ class Task(object):
                                 'Requested sample type: {0}'.format(type(element)),
                                 DAQmxErrors.UNKNOWN.value, task_name=self._name)
                         data = numpy.asarray(data, dtype=numpy.bool)
-                        print("write_digital_lines")
+                        # print("write_digital_lines")
                         # return _write_digital_lines(
                             # self._handle, data, number_of_samples_per_channel,
                             # auto_start, timeout)
@@ -1494,14 +1494,14 @@ class Task(object):
                                 DAQmxErrors.UNKNOWN.value, task_name=self._name)
 
                         data = numpy.asarray(data, dtype=numpy.uint32)
-                        print("DIGITAL DATA received & written:\n", data)
+                        # print("DIGITAL DATA received & written:\n", data)
                     #     return _write_digital_u_32(
                     #         self._handle, data, number_of_samples_per_channel,
                     #         auto_start, timeout)
             # Analog Input
             if write_chan_type == ChannelType.ANALOG_OUTPUT:
                 data = numpy.asarray(data, dtype=numpy.float64)
-                print("ANALOG DATA received & written:\n", data)
+                # print("ANALOG DATA received & written:\n", data)
                 # return _write_analog_f_64(
                 #     self._handle, data, number_of_samples_per_channel, auto_start,
                 #     timeout)
